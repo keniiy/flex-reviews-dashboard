@@ -4,7 +4,7 @@ import { HostAwayReviewRaw } from "@/modules/reviews/types";
  * Mock Host Away review data
  * Based on the example from the assessment brief
  */
-export const mockHostAwayReviews: HostAwayReviewRaw[] = [
+export const mockHostawayReviews: HostAwayReviewRaw[] = [
   {
     id: 7453,
     type: "host-to-guest",

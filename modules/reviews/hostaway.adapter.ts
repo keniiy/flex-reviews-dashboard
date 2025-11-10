@@ -3,7 +3,7 @@ import { HostAwayReviewRaw, ListingReviews, Review } from "./types";
 /**
  * Normalizes raw Host-Away review into our domain model
  */
-export function normalizationHostAwayReview(raw: HostAwayReviewRaw): Review {
+export function normalizationHostawayReview(raw: HostAwayReviewRaw): Review {
   // Extract category ratings into a clean object
   const categories =
     raw.reviewCategory?.reduce((acc, curr) => {
