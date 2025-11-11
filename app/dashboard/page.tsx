@@ -95,19 +95,6 @@ export default function DashboardPage() {
     listings,
   ]);
 
-  useEffect(() => {
-    setOpenListingIds((prev) => {
-      const allowed = new Set(filteredListingResults.map(({ listing }) => listing.listingId));
-      const next: Record<string, boolean> = {};
-      allowed.forEach((id) => {
-        if (prev[id]) {
-          next[id] = true;
-        }
-      });
-      return next;
-    });
-  }, [filteredListingResults]);
-
   const handleApproval = async (reviewId: string, approved: boolean) => {
     const target = listings
       .flatMap((listing) => listing.reviews)
@@ -230,6 +217,19 @@ export default function DashboardPage() {
     showApprovedOnly,
     sortBy,
   ]);
+
+  useEffect(() => {
+    setOpenListingIds((prev) => {
+      const allowed = new Set(filteredListingResults.map(({ listing }) => listing.listingId));
+      const next: Record<string, boolean> = {};
+      allowed.forEach((id) => {
+        if (prev[id]) {
+          next[id] = true;
+        }
+      });
+      return next;
+    });
+  }, [filteredListingResults]);
 
   if (loading) {
     return (
