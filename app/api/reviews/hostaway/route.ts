@@ -1,16 +1,20 @@
+import { NextResponse } from "next/server";
 import { mockHostawayReviews } from "@/lib/mock-data";
 import {
+  normalizeHostawayReview,
   groupByListing,
-  normalizationHostawayReview,
 } from "@/modules/reviews/hostaway.adapter";
-import { NextResponse } from "next/server";
+import { approvalsStore } from "@/modules/reviews/approvals.store";
 
 export async function GET() {
   try {
     // Normalize all raw reviews
-    const normalizedReviews = mockHostawayReviews.map(
-      normalizationHostawayReview
-    );
+    const normalizedReviews = mockHostawayReviews.map((raw) => {
+      const review = normalizeHostawayReview(raw);
+      // Check approval status from store
+      review.approved = approvalsStore.isApproved(review.id);
+      return review;
+    });
 
     // Group by listing with aggregates
     const listingReviews = groupByListing(normalizedReviews);
