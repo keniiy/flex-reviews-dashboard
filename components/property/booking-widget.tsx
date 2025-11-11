@@ -5,6 +5,12 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Calendar, Users, Bell } from 'lucide-react';
 
+const gbp = new Intl.NumberFormat('en-GB', {
+  style: 'currency',
+  currency: 'GBP',
+  maximumFractionDigits: 0,
+});
+
 interface BookingWidgetProps {
   propertyName: string;
   avgRating: number;
@@ -27,7 +33,7 @@ export function BookingWidget({ propertyName, avgRating }: BookingWidgetProps) {
       <CardContent className="pt-6">
         <div className="flex items-baseline justify-between mb-4">
           <div>
-            <div className="text-3xl font-semibold text-fg">£{nightlyRate}</div>
+            <div className="text-3xl font-semibold text-fg">{gbp.format(nightlyRate)}</div>
             <p className="text-xs text-muted">avg nightly rate</p>
           </div>
           <Badge variant="secondary" className="bg-brand-primary/15 text-brand-primary border-brand-primary/30">
@@ -70,19 +76,19 @@ export function BookingWidget({ propertyName, avgRating }: BookingWidgetProps) {
         <div className="mt-6 pt-6 border-t border-border space-y-2 text-sm">
           <div className="flex items-center justify-between text-muted">
             <span>Cleaning fee</span>
-            <span>£{cleaningFee}</span>
+            <span>{gbp.format(cleaningFee)}</span>
           </div>
           <div className="flex items-center justify-between text-muted">
             <span>Service fee</span>
-            <span>£{serviceFee}</span>
+            <span>{gbp.format(serviceFee)}</span>
           </div>
           <div className="flex items-center justify-between text-muted">
             <span>Taxes & city fees</span>
-            <span>£{taxes}</span>
+            <span>{gbp.format(taxes)}</span>
           </div>
           <div className="flex items-center justify-between font-semibold text-fg">
             <span>Estimated total</span>
-            <span>£{estimatedTotal}</span>
+            <span>{gbp.format(estimatedTotal)}</span>
           </div>
 
           <div className="text-xs text-muted text-center">

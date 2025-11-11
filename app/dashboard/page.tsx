@@ -15,6 +15,7 @@ import {
   CheckCircle,
   ChevronDown,
   Clock,
+  EyeOff,
   Filter,
   MessageSquare,
   Star,
@@ -494,15 +495,11 @@ export default function DashboardPage() {
                       { label: 'Rating', value: 'rating' },
                     ]}
                   />
-                  <label className="flex items-center gap-2 text-sm text-muted">
-                    <input
-                      type="checkbox"
-                      checked={showApprovedOnly}
-                      onChange={(e) => setShowApprovedOnly(e.target.checked)}
-                      className="w-4 h-4"
-                    />
-                    Approved only
-                  </label>
+                  <FilterToggle
+                    label="Approved only"
+                    value={showApprovedOnly}
+                    onChange={setShowApprovedOnly}
+                  />
                 </div>
               </CardContent>
             </Card>
@@ -614,6 +611,37 @@ function FilterSelect({
           </option>
         ))}
       </select>
+    </div>
+  );
+}
+
+function FilterToggle({
+  label,
+  value,
+  onChange,
+}: {
+  label: string;
+  value: boolean;
+  onChange: (next: boolean) => void;
+}) {
+  const Icon = value ? CheckCircle : EyeOff;
+  const iconClass = value ? 'text-white' : 'text-muted';
+
+  return (
+    <div className="flex flex-col gap-2">
+      <span className="text-xs text-muted">{label}</span>
+      <button
+        type="button"
+        onClick={() => onChange(!value)}
+        className={`flex items-center justify-between rounded-lg border px-3 py-2 text-sm transition-colors ${
+          value
+            ? 'border-brand-primary bg-brand-primary text-white'
+            : 'border-border bg-bg-surface text-fg hover:border-brand-primary'
+        }`}
+      >
+        <span>{value ? 'Showing approved' : 'All reviews'}</span>
+        <Icon className={`w-4 h-4 ${iconClass}`} />
+      </button>
     </div>
   );
 }
