@@ -54,7 +54,7 @@ export default function DashboardPage() {
   const [showApprovedOnly, setShowApprovedOnly] = useState(false);
   const [sortBy, setSortBy] = useState<'date' | 'rating'>('date');
   const [page, setPage] = useState(1);
-  const [openListingId, setOpenListingId] = useState<string | null>(null);
+  const [openListingIds, setOpenListingIds] = useState<Record<string, boolean>>({});
   const pageSize = 2;
 
   const fetchReviews = useCallback(async () => {
@@ -85,7 +85,6 @@ export default function DashboardPage() {
 
   useEffect(() => {
     setPage(1);
-    setOpenListingId(null);
   }, [
     minRating,
     selectedChannel,
@@ -95,6 +94,19 @@ export default function DashboardPage() {
     sortBy,
     listings,
   ]);
+
+  useEffect(() => {
+    setOpenListingIds((prev) => {
+      const allowed = new Set(filteredListingResults.map(({ listing }) => listing.listingId));
+      const next: Record<string, boolean> = {};
+      allowed.forEach((id) => {
+        if (prev[id]) {
+          next[id] = true;
+        }
+      });
+      return next;
+    });
+  }, [filteredListingResults]);
 
   const handleApproval = async (reviewId: string, approved: boolean) => {
     const target = listings
@@ -244,7 +256,7 @@ export default function DashboardPage() {
   );
 
   const listingCards = paginatedListings.map(({ listing, filteredReviews }) => {
-    const isOpen = openListingId === listing.listingId;
+    const isOpen = Boolean(openListingIds[listing.listingId]);
     const trend = listing.insights?.recentTrend;
     const trendConfig: Record<
       string,
@@ -330,7 +342,15 @@ export default function DashboardPage() {
                   variant="outline"
                   className="border-border text-fg hover:bg-bg-surface"
                   onClick={() =>
-                    setOpenListingId(isOpen ? null : listing.listingId)
+                    setOpenListingIds((prev) => {
+                      const next = { ...prev };
+                      if (next[listing.listingId]) {
+                        delete next[listing.listingId];
+                      } else {
+                        next[listing.listingId] = true;
+                      }
+                      return next;
+                    })
                   }
                   aria-expanded={isOpen}
                   aria-controls={`listing-reviews-${listing.listingId}`}
@@ -559,6 +579,30 @@ export default function DashboardPage() {
           <Section
             title="Properties & reviews"
             description="Filter, triage, and publish reviews for each listing."
+            actions={
+              <div className="flex gap-2">
+                <Button
+                  variant="ghost"
+                  className="text-sm text-fg hover:text-brand-primary"
+                  onClick={() => {
+                    const next: Record<string, boolean> = {};
+                    filteredListingResults.forEach(({ listing }) => {
+                      next[listing.listingId] = true;
+                    });
+                    setOpenListingIds(next);
+                  }}
+                >
+                  Expand all
+                </Button>
+                <Button
+                  variant="ghost"
+                  className="text-sm text-fg hover:text-brand-primary"
+                  onClick={() => setOpenListingIds({})}
+                >
+                  Collapse all
+                </Button>
+              </div>
+            }
           >
             <div className="space-y-6">
               {hasVisibleListings ? (

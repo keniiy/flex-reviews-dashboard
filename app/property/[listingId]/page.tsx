@@ -52,6 +52,7 @@ export default function PropertyPage() {
   }, [listingId]);
 
   const listingName = listing?.listingName ?? '';
+  const listingKey = listing?.listingId ?? '';
 
   useEffect(() => {
     if (!listingName) {
@@ -65,7 +66,7 @@ export default function PropertyPage() {
         setGoogleLoading(true);
         setGoogleError(null);
         const response = await fetch(
-          `/api/reviews/google?listingName=${encodeURIComponent(listingName)}`,
+          `/api/reviews/google?listingName=${encodeURIComponent(listingName)}&listingId=${encodeURIComponent(listingKey)}`,
           { signal: controller.signal }
         );
         if (!response.ok) {
@@ -90,7 +91,7 @@ export default function PropertyPage() {
     loadGoogle();
 
     return () => controller.abort();
-  }, [listingName]);
+  }, [listingName, listingKey]);
 
   if (loading) {
     return (

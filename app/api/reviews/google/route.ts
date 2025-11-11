@@ -4,6 +4,7 @@ import { normalizeHostawayReview } from "@/modules/reviews/hostaway.adapter";
 
 export async function GET(request: NextRequest) {
   const listingName = request.nextUrl.searchParams.get("listingName");
+  const listingId = request.nextUrl.searchParams.get("listingId") ?? undefined;
 
   if (!listingName) {
     return NextResponse.json(
@@ -13,7 +14,7 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const result = await fetchGoogleReviewsForListing(listingName);
+    const result = await fetchGoogleReviewsForListing(listingName, listingId);
     const normalized = result.reviews.map((raw) => normalizeHostawayReview(raw));
 
     return NextResponse.json({

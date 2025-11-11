@@ -65,14 +65,6 @@ export default function HomePage() {
                 <ArrowRight className="w-4 h-4 ml-2" />
               </Link>
             </Button>
-            {sourceMeta && (
-              <div className="flex items-center gap-2 bg-white/10 rounded-2xl px-4 py-2 text-sm">
-                <Badge variant="secondary" className="bg-white/20 text-white border-white/30">
-                  {sourceMeta.type === 'hostaway' ? 'Live Hostaway data' : 'Mock data'}
-                </Badge>
-                <span className="text-white/80 text-xs">Last sync · {new Date(sourceMeta.lastSyncedAt).toLocaleString()}</span>
-              </div>
-            )}
           </div>
           <div className="grid gap-3 sm:grid-cols-3 bg-white/10 rounded-2xl p-4 backdrop-blur mt-4">
             {[
