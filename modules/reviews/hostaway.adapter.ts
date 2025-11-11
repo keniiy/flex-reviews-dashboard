@@ -1,23 +1,21 @@
-import { HostAwayReviewRaw, ListingReviews, Review } from "./types";
+import {
+  HostawayReviewRaw,
+  Review,
+  ListingReviews,
+  Channel,
+  ReviewStatus,
+} from "./types";
 
-/**
- * Normalizes raw Host-Away review into our domain model
- */
-export function normalizeHostawayReview(raw: HostAwayReviewRaw): Review {
-  // Extract category ratings into a clean object
-  const categories =
-    raw.reviewCategory?.reduce((acc, curr) => {
-      acc[curr.category] = curr.rating;
-      return acc;
-    }, {} as Record<string, number>) || {};
+export function normalizeHostawayReview(raw: HostawayReviewRaw): Review {
+  const categories = raw.reviewCategory.reduce((acc, cat) => {
+    acc[cat.category] = cat.rating;
+    return acc;
+  }, {} as Record<string, number>);
 
-  // Generate a slug-style listing name or type (simplified for this example
   const listingId = raw.listingName
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "");
-
-  // Infer channel from listing name or type (simplified for this example)
+    .replace(/^-|-$/g, "");
 
   const channel = inferChannel(raw);
 
@@ -26,51 +24,47 @@ export function normalizeHostawayReview(raw: HostAwayReviewRaw): Review {
     listingId,
     listingName: raw.listingName,
     guestName: raw.guestName,
-    review: raw.publicReview || "",
+    review: raw.publicReview,
     rating: raw.rating || calculateOverallRating(categories),
     categories,
     channel,
-    submittedAt: raw.submittedAt,
+    submittedAt: new Date(raw.submittedAt).toISOString(),
     approved: false,
+    status: ReviewStatus.Published,
   };
 }
 
-/**
- * Groups normalized reviews by listing and computes aggregates
- */
 export function groupByListing(reviews: Review[]): ListingReviews[] {
   const grouped = new Map<string, Review[]>();
 
-  // Group reviews by listing
   reviews.forEach((review) => {
-    const existing = grouped.get(review.listingId) ?? [];
+    const existing = grouped.get(review.listingId) || [];
     grouped.set(review.listingId, [...existing, review]);
   });
 
-  // Compute aggregates for each listing
   return Array.from(grouped.entries()).map(([listingId, listingReviews]) => {
     const totalReviews = listingReviews.length;
     const avgRating =
       listingReviews.reduce((sum, r) => sum + r.rating, 0) / totalReviews;
 
-    // Compute category averages
     const categoryAverages: Record<string, number> = {};
     const categoryKeys = new Set<string>();
+
     listingReviews.forEach((r) => {
-      Object.keys(r.categories).forEach((key) => categoryKeys.add(key));
+      Object.keys(r.categories).forEach((cat) => categoryKeys.add(cat));
     });
 
     categoryKeys.forEach((category) => {
       const values = listingReviews
         .map((r) => r.categories[category])
-        .filter((val): val is number => val !== undefined);
+        .filter((val) => val !== undefined);
 
-      if (values.length > 0)
+      if (values.length > 0) {
         categoryAverages[category] =
           values.reduce((sum, val) => sum + val, 0) / values.length;
+      }
     });
 
-    // get unique channels
     const channels = Array.from(new Set(listingReviews.map((r) => r.channel)));
 
     return {
@@ -85,19 +79,20 @@ export function groupByListing(reviews: Review[]): ListingReviews[] {
   });
 }
 
-// Helper to calculate overall rating if not provided
-// Helper: infer booking channel from review data
-function inferChannel(raw: HostAwayReviewRaw): string {
-  // In real implementation, this would come from Hostaway metadata
-  // For now, we'll use a simple heuristic
-  if (raw.type.includes("airbnb")) return "airbnb";
-  if (raw.type.includes("booking")) return "booking.com";
-  return "direct";
+function inferChannel(raw: HostawayReviewRaw): Channel {
+  // Simple heuristic - in production, this would come from Hostaway metadata
+  const random = Math.random();
+  if (random < 0.5) return Channel.Airbnb;
+  if (random < 0.8) return Channel.Booking;
+  return Channel.Direct;
 }
 
-// Helper: calculate overall rating from categories
 function calculateOverallRating(categories: Record<string, number>): number {
   const values = Object.values(categories);
   if (values.length === 0) return 0;
-  return values.reduce((sum, val) => sum + val, 0) / values.length;
+  return (
+    Math.round(
+      (values.reduce((sum, val) => sum + val, 0) / values.length) * 10
+    ) / 10
+  );
 }

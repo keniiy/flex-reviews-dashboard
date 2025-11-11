@@ -1,13 +1,31 @@
-export interface HostAwayReviewRaw {
-  id: string | number;
+// Enums for type safety
+export enum ReviewStatus {
+  Published = "published",
+  Pending = "pending",
+  Rejected = "rejected",
+}
+
+export enum Channel {
+  Airbnb = "airbnb",
+  Booking = "booking",
+  Direct = "direct",
+}
+
+export enum ReviewType {
+  HostToGuest = "host-to-guest",
+  GuestToHost = "guest-to-host",
+}
+
+export interface HostawayReviewRaw {
+  id: number;
   type: string;
   status: string;
   rating: number | null;
-  publicReview: string | null;
+  publicReview: string;
   reviewCategory: Array<{
     category: string;
     rating: number;
-  }> | null;
+  }>;
   submittedAt: string;
   guestName: string;
   listingName: string;
@@ -25,6 +43,7 @@ export interface Review {
   channel: string;
   submittedAt: string;
   approved: boolean;
+  status: ReviewStatus;
 }
 
 // Grouped reviews by listing
