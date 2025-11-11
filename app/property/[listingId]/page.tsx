@@ -97,9 +97,7 @@ export default function PropertyPage() {
     return (
       <div className="min-h-screen bg-bg-primary text-fg">
         <NavHeader />
-        <div className="flex items-center justify-center py-24 text-lg">
-          Loading property...
-        </div>
+        <PropertyPageSkeleton />
       </div>
     );
   }
@@ -343,6 +341,44 @@ export default function PropertyPage() {
           </div>
         </div>
       </main>
+    </div>
+  );
+}
+
+function PropertyPageSkeleton() {
+  return (
+    <div className="max-w-7xl mx-auto px-6 py-10 space-y-8 animate-pulse">
+      <div className="h-4 bg-border rounded w-32" />
+      <div className="h-[320px] sm:h-[400px] lg:h-[520px] bg-border rounded-3xl" />
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="lg:col-span-2 space-y-8">
+          <div className="bg-card border border-border rounded-3xl p-8 space-y-4">
+            <div className="h-4 bg-border rounded w-24" />
+            <div className="h-6 bg-border rounded w-3/4" />
+            <div className="h-4 bg-border rounded w-2/3" />
+            <div className="h-4 bg-border rounded w-full" />
+            <div className="h-4 bg-border rounded w-5/6" />
+          </div>
+          <div className="bg-card border border-border rounded-3xl p-8 space-y-4">
+            <div className="h-5 bg-border rounded w-48" />
+            {Array.from({ length: 3 }).map((_, index) => (
+              <div key={index} className="h-4 bg-border rounded w-full" />
+            ))}
+            <div className="grid grid-cols-2 gap-3">
+              {Array.from({ length: 4 }).map((_, index) => (
+                <div key={index} className="h-16 bg-border rounded-xl" />
+              ))}
+            </div>
+          </div>
+        </div>
+        <div className="space-y-4">
+          <div className="bg-card border border-border rounded-3xl p-6 space-y-3">
+            <div className="h-6 bg-border rounded w-1/2" />
+            <div className="h-4 bg-border rounded w-2/3" />
+            <div className="h-10 bg-border rounded w-full" />
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
