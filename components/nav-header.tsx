@@ -1,12 +1,41 @@
 'use client';
 
 import { useTheme } from './theme-provider';
-import { Moon, Sun, LayoutDashboard } from 'lucide-react';
+import { Moon, Sun, LayoutDashboard, Building2, Info, PhoneCall } from 'lucide-react';
 import { Button } from './ui/button';
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
+
+const navLinks = [
+  {
+    href: '/dashboard',
+    label: 'Dashboard',
+    icon: LayoutDashboard,
+    match: (pathname: string) => pathname.startsWith('/dashboard'),
+  },
+  {
+    href: '/property',
+    label: 'All listings',
+    icon: Building2,
+    match: (pathname: string) => pathname.startsWith('/property'),
+  },
+  {
+    href: '/property#about',
+    label: 'About Us',
+    icon: Info,
+    match: (pathname: string) => pathname.startsWith('/property'),
+  },
+  {
+    href: '/property#contact',
+    label: 'Contact',
+    icon: PhoneCall,
+    match: (pathname: string) => pathname.startsWith('/property'),
+  },
+];
 
 export function NavHeader() {
   const { theme, toggleTheme } = useTheme();
+  const pathname = usePathname();
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/60">
@@ -23,14 +52,22 @@ export function NavHeader() {
         </Link>
 
         {/* Nav Links */}
-        <nav className="flex items-center gap-6">
-          <Link 
-            href="/dashboard" 
-            className="flex items-center gap-2 text-fg hover:text-brand-primary transition-colors"
-          >
-            <LayoutDashboard className="w-4 h-4" />
-            <span className="font-medium">Dashboard</span>
-          </Link>
+        <nav className="flex items-center gap-6 text-sm">
+          {navLinks.map(({ href, label, icon: Icon, match }) => {
+            const active = match(pathname);
+            return (
+              <Link
+                key={href}
+                href={href}
+                className={`flex items-center gap-2 transition-colors ${
+                  active ? 'text-brand-primary' : 'text-fg hover:text-brand-primary'
+                }`}
+              >
+                <Icon className="w-4 h-4" />
+                <span className="font-medium">{label}</span>
+              </Link>
+            );
+          })}
         </nav>
 
         {/* Theme Toggle */}

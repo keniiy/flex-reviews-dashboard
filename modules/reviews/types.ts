@@ -46,6 +46,13 @@ export interface Review {
   status: ReviewStatus;
 }
 
+export interface ListingInsights {
+  topCategory: string | null;
+  lowestCategory: string | null;
+  approvalRate: number;
+  recentTrend: "improving" | "declining" | "stable";
+}
+
 // Grouped reviews by listing
 export interface ListingReviews {
   listingId: string;
@@ -55,4 +62,27 @@ export interface ListingReviews {
   categoryAverages: Record<string, number>;
   channels: string[];
   reviews: Review[];
+  insights: ListingInsights;
+}
+
+export interface ReviewsTotals {
+  totalReviews: number;
+  avgRating: number;
+  approvedCount: number;
+  pendingCount: number;
+  channelBreakdown: Record<string, number>;
+  categoryAverages: Record<string, number>;
+}
+
+export interface ReviewsSourceMeta {
+  type: "hostaway" | "mock";
+  fallback?: string;
+  lastSyncedAt: string;
+}
+
+export interface ReviewsApiResponse {
+  success: boolean;
+  listings: ListingReviews[];
+  totals: ReviewsTotals;
+  source: ReviewsSourceMeta;
 }

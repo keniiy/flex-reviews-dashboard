@@ -1,4 +1,4 @@
-import { Review, ListingReviews } from "./types";
+import { Review, ListingReviews, ListingInsights } from "./types";
 
 export interface FilterOptions {
   minRating?: number;
@@ -7,6 +7,7 @@ export interface FilterOptions {
   startDate?: string;
   endDate?: string;
   approvedOnly?: boolean;
+  timeframeDays?: number;
 }
 
 /**
@@ -15,23 +16,48 @@ export interface FilterOptions {
 
 export function filterReviews(
   reviews: Review[],
-  options: FilterOptions
+  options: FilterOptions = {}
 ): Review[] {
+  const timeframeCutoff = options.timeframeDays
+    ? Date.now() - options.timeframeDays * 24 * 60 * 60 * 1000
+    : null;
+
   return reviews.filter((review) => {
-    if (options.minRating !== undefined && review.rating < options.minRating)
+    const submittedAtMs = new Date(review.submittedAt).getTime();
+
+    if (options.minRating !== undefined && review.rating < options.minRating) {
       return false;
+    }
 
-    if (options.channel && review.channel !== options.channel) return false;
-
-    if (options.category && !(options.category in review.categories))
+    if (options.channel && review.channel !== options.channel) {
       return false;
+    }
 
-    if (options.startDate && review.submittedAt < options.startDate)
+    if (options.category && !(options.category in review.categories)) {
       return false;
+    }
 
-    if (options.endDate && review.submittedAt > options.endDate) return false;
+    if (
+      options.startDate &&
+      submittedAtMs < new Date(options.startDate).getTime()
+    ) {
+      return false;
+    }
 
-    if (options.approvedOnly && !review.approved) return false;
+    if (
+      options.endDate &&
+      submittedAtMs > new Date(options.endDate).getTime()
+    ) {
+      return false;
+    }
+
+    if (timeframeCutoff && submittedAtMs < timeframeCutoff) {
+      return false;
+    }
+
+    if (options.approvedOnly && !review.approved) {
+      return false;
+    }
 
     return true;
   });
@@ -51,7 +77,9 @@ export function sortReviews(
     let compareValue = 0;
 
     if (sortBy === "date") {
-      compareValue = a.submittedAt.localeCompare(b.submittedAt);
+      compareValue =
+        new Date(a.submittedAt).getTime() -
+        new Date(b.submittedAt).getTime();
     } else if (sortBy === "rating") {
       compareValue = a.rating - b.rating;
     }
@@ -65,7 +93,9 @@ export function sortReviews(
 /**
  * Computes insights from listing reviews
  */
-export function computeInsights(listingReviews: ListingReviews) {
+export function computeInsights(
+  listingReviews: Pick<ListingReviews, "reviews" | "categoryAverages" | "totalReviews">
+): ListingInsights {
   const { reviews, categoryAverages } = listingReviews;
 
   // Find most common positive / negative categories
@@ -76,7 +106,10 @@ export function computeInsights(listingReviews: ListingReviews) {
   return {
     topCategory: categoryScores[0]?.[0] || null,
     lowestCategory: categoryScores[categoryScores.length - 1]?.[0] || null,
-    approvalRate: reviews.filter((r) => r.approved).length / reviews.length,
+    approvalRate:
+      reviews.length === 0
+        ? 0
+        : reviews.filter((r) => r.approved).length / reviews.length,
     recentTrend: computeRecentTrend(reviews),
   };
 }
@@ -89,20 +122,24 @@ function computeRecentTrend(
 ): "improving" | "declining" | "stable" {
   if (reviews.length < 4) return "stable";
 
-  const sorted = [...reviews].sort((a, b) =>
-    a.submittedAt.localeCompare(b.submittedAt)
+  const sorted = [...reviews].sort(
+    (a, b) =>
+      new Date(a.submittedAt).getTime() -
+      new Date(b.submittedAt).getTime()
   );
 
-  const recent = sorted.slice(0, Math.ceil(sorted.length / 3));
-  const older = sorted.slice(Math.ceil(reviews.length / 3));
+  const chunkSize = Math.max(1, Math.floor(sorted.length / 3));
+  const older = sorted.slice(0, chunkSize);
+  const recent = sorted.slice(-chunkSize);
 
   const recentAvg =
     recent.reduce((sum, r) => sum + r.rating, 0) / recent.length;
-  const olderAvg = older.reduce((sum, r) => sum + r.rating, 0) / older.length;
+  const olderAvg =
+    older.reduce((sum, r) => sum + r.rating, 0) / older.length;
 
   const diff = recentAvg - olderAvg;
 
-  if (diff > 0.3) return "improving";
-  if (diff < -0.3) return "declining";
+  if (diff > 0.2) return "improving";
+  if (diff < -0.2) return "declining";
   return "stable";
 }

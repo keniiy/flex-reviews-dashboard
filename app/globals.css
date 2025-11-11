@@ -1,42 +1,65 @@
 @import "tailwindcss";
 
 @theme inline {
-  /* Backgrounds - Dark Dashboard */
-  --color-bg-primary: #0a0e13;
-  --color-bg-surface: #111827;
-  --color-bg-card: #1a1f2e;
+  --color-bg-primary: #f8f4ed;
+  --color-bg-surface: #ffffff;
+  --color-bg-card: #ffffff;
 
-  /* Flex Brand Colors - More vibrant */
-  --color-brand-primary: #14b8a6;  /* Teal - more vibrant than #164f4c */
-  --color-brand-hover: #0d9488;
-  --color-brand-light: #2dd4bf;
+  --color-brand-primary: #0f5c4f;
+  --color-brand-hover: #0b4037;
+  --color-brand-light: #157c6a;
+  --color-accent-red: #c82921;
 
-  /* Text Hierarchy */
-  --color-text-primary: #f9fafb;
-  --color-text-secondary: #e5e7eb;
-  --color-text-muted: #9ca3af;
+  --color-text-primary: #102621;
+  --color-text-secondary: #3b4d4a;
+  --color-text-muted: #7a8b87;
 
-  /* Semantic Colors */
-  --color-success: #10b981;
-  --color-warning: #f59e0b;
-  --color-error: #ef4444;
+  --color-border: #e5dfd4;
+  --color-border-light: #f4ede3;
 
-  /* Borders */
-  --color-border: #374151;
-  --color-border-light: #4b5563;
+  --color-success: #0a8c74;
+  --color-warning: #c56a1a;
+  --color-error: #c03f3f;
 
-  /* Gradients */
-  --gradient-brand: linear-gradient(135deg, #14b8a6 0%, #0d9488 100%);
-  --gradient-card: linear-gradient(135deg, #1a1f2e 0%, #111827 100%);
+  --shadow-card: 0 15px 35px rgba(15, 92, 79, 0.08);
 
-  /* Font */
+  --gradient-brand: linear-gradient(135deg, #0f5c4f 0%, #0b4037 100%);
+  --gradient-card: linear-gradient(135deg, #fff 0%, #f5efe5 100%);
+
   --font-sans: "Inter", system-ui, sans-serif;
+}
+
+:root {
+  color-scheme: light;
+}
+
+.dark {
+  --color-bg-primary: #050607;
+  --color-bg-surface: #0e1114;
+  --color-bg-card: #15191f;
+  --color-brand-primary: #13b38f;
+  --color-brand-hover: #0d8a6c;
+  --color-brand-light: #2cd6b5;
+  --color-text-primary: #f5f7fb;
+  --color-text-secondary: #cbd5f5;
+  --color-text-muted: #8f9ab5;
+  --color-border: #1f2937;
+  --color-border-light: #2e3746;
+  --shadow-card: 0 15px 35px rgba(0, 0, 0, 0.4);
+  color-scheme: dark;
 }
 
 body {
   background-color: var(--color-bg-primary);
   color: var(--color-text-primary);
   font-family: var(--font-sans);
+  min-height: 100vh;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
 }
 
 /* Add modern card hover effect */
@@ -49,16 +72,16 @@ body {
   box-shadow: 0 20px 40px rgba(20, 184, 166, 0.15);
 }
 
-/* Light mode overrides */
 .light {
-  --color-bg-primary: #f8fafc;
-  --color-bg-surface: #ffffff;
-  --color-bg-card: #ffffff;
-  
-  --color-text-primary: #0f172a;
-  --color-text-secondary: #334155;
-  --color-text-muted: #64748b;
-  
-  --color-border: #e2e8f0;
-  --color-border-light: #cbd5e1;
+  color-scheme: light;
+}
+
+.pill {
+  border-radius: 9999px;
+  padding-inline: 1rem;
+  padding-block: 0.4rem;
+  background: var(--color-bg-surface);
+  border: 1px solid var(--color-border);
+  font-size: 0.85rem;
+  color: var(--color-text-secondary);
 }

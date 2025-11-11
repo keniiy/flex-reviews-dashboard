@@ -2,14 +2,18 @@
 // In production, this would be a database
 
 class ApprovalsStore {
-  private approvals = new Map<string | number, boolean>();
+  private approvals = new Map<string, boolean>();
 
-  approve(reviewId: number): void {
-    this.approvals.set(reviewId, true);
+  setApproval(reviewId: string, approved: boolean): void {
+    this.approvals.set(reviewId, approved);
+  }
+
+  approve(reviewId: string): void {
+    this.setApproval(reviewId, true);
   }
 
   unapprove(reviewId: string): void {
-    this.approvals.set(reviewId, false);
+    this.setApproval(reviewId, false);
   }
 
   isApproved(reviewId: string): boolean {

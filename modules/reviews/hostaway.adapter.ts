@@ -5,6 +5,7 @@ import {
   Channel,
   ReviewStatus,
 } from "./types";
+import { computeInsights } from "./service";
 
 export function normalizeHostawayReview(raw: HostawayReviewRaw): Review {
   const categories = raw.reviewCategory.reduce((acc, cat) => {
@@ -18,6 +19,14 @@ export function normalizeHostawayReview(raw: HostawayReviewRaw): Review {
     .replace(/^-|-$/g, "");
 
   const channel = inferChannel(raw);
+  const ratingOnFive =
+    raw.rating !== null
+      ? normalizeStarRating(raw.rating)
+      : calculateOverallRating(categories);
+
+  const status = (Object.values(ReviewStatus) as string[]).includes(raw.status)
+    ? (raw.status as ReviewStatus)
+    : ReviewStatus.Published;
 
   return {
     id: raw.id.toString(),
@@ -25,12 +34,12 @@ export function normalizeHostawayReview(raw: HostawayReviewRaw): Review {
     listingName: raw.listingName,
     guestName: raw.guestName,
     review: raw.publicReview,
-    rating: raw.rating || calculateOverallRating(categories),
+    rating: ratingOnFive,
     categories,
     channel,
     submittedAt: new Date(raw.submittedAt).toISOString(),
     approved: false,
-    status: ReviewStatus.Published,
+    status,
   };
 }
 
@@ -67,7 +76,7 @@ export function groupByListing(reviews: Review[]): ListingReviews[] {
 
     const channels = Array.from(new Set(listingReviews.map((r) => r.channel)));
 
-    return {
+    const baseListing = {
       listingId,
       listingName: listingReviews[0].listingName,
       avgRating: Math.round(avgRating * 10) / 10,
@@ -75,24 +84,35 @@ export function groupByListing(reviews: Review[]): ListingReviews[] {
       categoryAverages,
       channels,
       reviews: listingReviews,
+    } satisfies Omit<ListingReviews, "insights">;
+
+    return {
+      ...baseListing,
+      insights: computeInsights(baseListing),
     };
   });
 }
 
 function inferChannel(raw: HostawayReviewRaw): Channel {
-  // Simple heuristic - in production, this would come from Hostaway metadata
-  const random = Math.random();
-  if (random < 0.5) return Channel.Airbnb;
-  if (random < 0.8) return Channel.Booking;
-  return Channel.Direct;
+  const channels = [Channel.Airbnb, Channel.Booking, Channel.Direct];
+  const hash =
+    Math.abs(
+      Array.from(`${raw.listingName}-${raw.guestName}-${raw.id}`).reduce(
+        (acc, char) => acc + char.charCodeAt(0),
+        0
+      )
+    ) % channels.length;
+  return channels[hash];
 }
 
 function calculateOverallRating(categories: Record<string, number>): number {
   const values = Object.values(categories);
   if (values.length === 0) return 0;
-  return (
-    Math.round(
-      (values.reduce((sum, val) => sum + val, 0) / values.length) * 10
-    ) / 10
-  );
+  const tenPointAverage = values.reduce((sum, val) => sum + val, 0) / values.length;
+  return normalizeStarRating(tenPointAverage);
+}
+
+function normalizeStarRating(scoreOutOfTen: number): number {
+  if (!scoreOutOfTen) return 0;
+  return Math.round((scoreOutOfTen / 10) * 5 * 10) / 10;
 }
