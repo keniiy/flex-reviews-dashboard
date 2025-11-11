@@ -48,3 +48,17 @@ body {
   transform: translateY(-2px);
   box-shadow: 0 20px 40px rgba(20, 184, 166, 0.15);
 }
+
+/* Light mode overrides */
+.light {
+  --color-bg-primary: #f8fafc;
+  --color-bg-surface: #ffffff;
+  --color-bg-card: #ffffff;
+  
+  --color-text-primary: #0f172a;
+  --color-text-secondary: #334155;
+  --color-text-muted: #64748b;
+  
+  --color-border: #e2e8f0;
+  --color-border-light: #cbd5e1;
+}
