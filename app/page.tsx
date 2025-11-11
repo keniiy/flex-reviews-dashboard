@@ -6,7 +6,6 @@ import Image from 'next/image';
 import { NavHeader } from '@/components/nav-header';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import type { ListingReviews, ReviewsApiResponse, ReviewsTotals, ReviewsSourceMeta } from '@/modules/reviews/types';
 import { FALLBACK_PHOTOS, buildPhotoUrl } from '@/components/property/photo-gallery';
 import { Star, ArrowRight } from 'lucide-react';
@@ -18,7 +17,7 @@ import { Pagination } from '@/components/ui/pagination';
 export default function HomePage() {
   const [listings, setListings] = useState<ListingReviews[]>([]);
   const [totals, setTotals] = useState<ReviewsTotals | null>(null);
-  const [sourceMeta, setSourceMeta] = useState<ReviewsSourceMeta | null>(null);
+  const [, setSourceMeta] = useState<ReviewsSourceMeta | null>(null);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
   const pageSize = 3;

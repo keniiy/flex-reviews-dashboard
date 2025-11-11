@@ -104,7 +104,7 @@ function loadManualOverrides(): Map<string, { placeId: string; placeName: string
     const contents = readFileSync(GOOGLE_PLACE_OVERRIDES_FILE, "utf-8");
     const parsed = JSON.parse(contents) as Record<string, { placeId: string; placeName: string }>;
     return new Map(Object.entries(parsed));
-  } catch (error) {
+  } catch {
     return new Map();
   }
 }
