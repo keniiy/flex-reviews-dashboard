@@ -76,8 +76,26 @@ function generateReview(id: number): HostawayReviewRaw {
   };
 }
 
-// Generate 60 realistic reviews
-export const mockHostawayReviews: HostawayReviewRaw[] = Array.from(
-  { length: 60 },
-  (_, i) => generateReview(7450 + i)
+function slugifyListing(name: string) {
+  return name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+}
+
+function seedApprovals(reviews: HostawayReviewRaw[]): HostawayReviewRaw[] {
+  const firstPerListing = new Set<string>();
+
+  return reviews.map((review) => {
+    const key = slugifyListing(review.listingName);
+    if (!firstPerListing.has(key)) {
+      firstPerListing.add(key);
+      return { ...review, approved: true };
+    }
+
+    const approveMore = faker.datatype.boolean({ probability: 0.35 });
+    return { ...review, approved: approveMore };
+  });
+}
+
+// Generate 60 realistic reviews and ensure at least one approved per listing
+export const mockHostawayReviews: HostawayReviewRaw[] = seedApprovals(
+  Array.from({ length: 60 }, (_, i) => generateReview(7450 + i))
 );

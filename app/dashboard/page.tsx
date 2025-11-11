@@ -20,7 +20,7 @@ import {
   TrendingUp,
 } from 'lucide-react';
 import { NavHeader } from '@/components/nav-header';
-import type { ListingReviews, Review, ReviewsApiResponse, ReviewsSourceMeta, ReviewsTotals } from '@/modules/reviews/types';
+import type { ListingReviews, ReviewsApiResponse, ReviewsSourceMeta, ReviewsTotals } from '@/modules/reviews/types';
 import { filterReviews, sortReviews } from '@/modules/reviews/service';
 
 const ratingOptions = [
@@ -43,6 +43,7 @@ export default function DashboardPage() {
   const [listings, setListings] = useState<ListingReviews[]>([]);
   const [totals, setTotals] = useState<ReviewsTotals | null>(null);
   const [sourceMeta, setSourceMeta] = useState<ReviewsSourceMeta | null>(null);
+  const [sourcesMeta, setSourcesMeta] = useState<Record<string, ReviewsSourceMeta>>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -70,6 +71,7 @@ export default function DashboardPage() {
       setListings(data.listings);
       setTotals(data.totals);
       setSourceMeta(data.source);
+      setSourcesMeta(data.sources ?? { hostaway: data.source });
     } catch (err) {
       console.error('Failed to fetch reviews:', err);
       setError(err instanceof Error ? err.message : 'Something went wrong');
@@ -135,19 +137,36 @@ export default function DashboardPage() {
       .slice(0, 4);
   }, [totals]);
 
-  const getFilteredReviews = (reviews: Review[]) => {
-    return sortReviews(
-      filterReviews(reviews, {
-        minRating: Number(minRating) > 0 ? Number(minRating) : undefined,
-        channel: selectedChannel !== 'all' ? selectedChannel : undefined,
-        category: selectedCategory !== 'all' ? selectedCategory : undefined,
-        timeframeDays: timeframe === 'all' ? undefined : Number(timeframe),
-        approvedOnly: showApprovedOnly,
-      }),
-      sortBy,
-      'desc'
-    );
-  };
+  const filteredListingResults = useMemo(() => {
+    return listings
+      .map((listing) => {
+        const filteredReviews = sortReviews(
+          filterReviews(listing.reviews, {
+            minRating: Number(minRating) > 0 ? Number(minRating) : undefined,
+            channel: selectedChannel !== 'all' ? selectedChannel : undefined,
+            category: selectedCategory !== 'all' ? selectedCategory : undefined,
+            timeframeDays: timeframe === 'all' ? undefined : Number(timeframe),
+            approvedOnly: showApprovedOnly,
+          }),
+          sortBy,
+          'desc'
+        );
+
+        return {
+          listing,
+          filteredReviews,
+        };
+      })
+      .filter(({ filteredReviews }) => filteredReviews.length > 0);
+  }, [
+    listings,
+    minRating,
+    selectedChannel,
+    selectedCategory,
+    timeframe,
+    showApprovedOnly,
+    sortBy,
+  ]);
 
   if (loading) {
     return (
@@ -168,12 +187,12 @@ export default function DashboardPage() {
       ? Math.round((totals.approvedCount / totals.totalReviews) * 100)
       : 0;
 
-  const paginatedListings = listings.slice((page - 1) * pageSize, page * pageSize);
+  const paginatedListings = filteredListingResults.slice(
+    (page - 1) * pageSize,
+    page * pageSize
+  );
 
-  const listingCards = paginatedListings.map((listing) => {
-    const filteredReviews = getFilteredReviews(listing.reviews);
-    if (filteredReviews.length === 0) return null;
-
+  const listingCards = paginatedListings.map(({ listing, filteredReviews }) => {
     const trend = listing.insights?.recentTrend;
     const trendConfig: Record<
       string,
@@ -276,7 +295,7 @@ export default function DashboardPage() {
       </div>
     );
   });
-  const hasVisibleListings = listingCards.some(Boolean);
+  const hasVisibleListings = filteredListingResults.length > 0;
 
   return (
     <div className="min-h-screen bg-bg-primary">
@@ -357,6 +376,48 @@ export default function DashboardPage() {
               </CardContent>
             </Card>
           </div>
+
+          {Object.keys(sourcesMeta).length > 0 && (
+            <Card className="bg-card border-border">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-sm text-muted">Integrations</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {Object.entries(sourcesMeta).map(([key, meta]) => {
+                  const label =
+                    key === "hostaway"
+                      ? "Hostaway Reviews"
+                      : key === "google"
+                        ? "Google Reviews"
+                        : key;
+                  const connected = meta.type !== "mock";
+
+                  return (
+                    <div
+                      key={key}
+                      className="flex flex-wrap items-center justify-between gap-2 border border-border/60 rounded-2xl px-4 py-3"
+                    >
+                      <div>
+                        <div className="font-medium text-fg">{label}</div>
+                        <div className="text-xs text-muted">
+                          Last sync · {new Date(meta.lastSyncedAt).toLocaleString()}
+                        </div>
+                        {meta.fallback && (
+                          <div className="text-xs text-warning mt-1">{meta.fallback}</div>
+                        )}
+                      </div>
+                      <Badge
+                        variant={connected ? "default" : "secondary"}
+                        className={connected ? "bg-success text-white border-none" : ""}
+                      >
+                        {connected ? "Connected" : "Mock data"}
+                      </Badge>
+                    </div>
+                  );
+                })}
+              </CardContent>
+            </Card>
+          )}
 
           <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
             <Card className="bg-card border-border xl:col-span-2">
@@ -498,7 +559,7 @@ export default function DashboardPage() {
             <Pagination
               page={page}
               pageSize={pageSize}
-              totalItems={listings.length}
+              totalItems={filteredListingResults.length}
               onPageChange={setPage}
               className="mt-6"
             />

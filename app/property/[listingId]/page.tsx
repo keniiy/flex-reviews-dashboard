@@ -194,10 +194,10 @@ export default function PropertyPage() {
                               })}
                             </div>
                           </div>
-                          <div className="flex items-center gap-1">
-                            {[...Array(5)].map((_, i) => (
-                              <Star
-                                key={i}
+                  <div className="flex items-center gap-1">
+                    {[...Array(5)].map((_, i) => (
+                      <Star
+                        key={i}
                                 className={`w-4 h-4 ${
                                   i < Math.round(review.rating)
                                     ? 'text-amber-500 fill-amber-500'
@@ -206,10 +206,13 @@ export default function PropertyPage() {
                               />
                             ))}
                           </div>
-                          <p className="text-muted leading-relaxed">{review.review}</p>
-                          <Button
-                            asChild
-                            variant="ghost"
+                  <p className="text-muted leading-relaxed">{review.review}</p>
+                  <div className="text-xs uppercase tracking-wide text-muted">
+                    Channel: <span className="capitalize text-fg">{review.channel}</span>
+                  </div>
+                  <Button
+                    asChild
+                    variant="ghost"
                             className="text-brand-primary hover:text-brand-primary/80 px-0"
                           >
                             <Link href={`/reviews/${review.id}`}>View review details</Link>

@@ -3,7 +3,7 @@
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Calendar, Users } from 'lucide-react';
+import { Calendar, Users, Bell } from 'lucide-react';
 
 interface BookingWidgetProps {
   propertyName: string;
@@ -16,6 +16,11 @@ export function BookingWidget({ propertyName, avgRating }: BookingWidgetProps) {
   const serviceFee = Math.round(nightlyRate * 0.12);
   const taxes = Math.round(nightlyRate * 0.08);
   const estimatedTotal = nightlyRate + cleaningFee + serviceFee + taxes;
+  const handleComingSoon = () => {
+    if (typeof window !== 'undefined') {
+      window.alert('Instant booking is coming soon. Reach out to bookings@flexliving.uk for availability.');
+    }
+  };
 
   return (
     <Card className="sticky top-24 border-border">
@@ -49,9 +54,17 @@ export function BookingWidget({ propertyName, avgRating }: BookingWidgetProps) {
             </div>
           </div>
 
-          <Button className="w-full bg-gradient-to-r from-brand-primary to-brand-hover text-white py-6 text-lg font-semibold hover:opacity-90">
-            Check Availability
+          <Button
+            className="w-full bg-gradient-to-r from-brand-primary to-brand-hover text-white py-6 text-lg font-semibold hover:opacity-90"
+            type="button"
+            onClick={handleComingSoon}
+          >
+            Check availability (beta)
           </Button>
+          <div className="flex items-center gap-2 rounded-lg bg-brand-primary/10 text-brand-primary px-3 py-2 text-sm">
+            <Bell className="w-4 h-4" />
+            Digital booking flow launching soon
+          </div>
         </div>
 
         <div className="mt-6 pt-6 border-t border-border space-y-2 text-sm">

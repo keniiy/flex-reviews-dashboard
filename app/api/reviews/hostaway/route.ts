@@ -4,32 +4,47 @@ import {
   groupByListing,
 } from "@/modules/reviews/hostaway.adapter";
 import { approvalsStore } from "@/modules/reviews/approvals.store";
-import { fetchHostawayReviews } from "@/modules/reviews/hostaway.service";
-import type { Review } from "@/modules/reviews/types";
+import {
+  fetchHostawayReviews,
+  type HostawayFetchResult,
+} from "@/modules/reviews/hostaway.service";
+import {
+  fetchGooglePlacesReviews,
+  type GoogleFetchResult,
+} from "@/modules/reviews/google.service";
+import type { Review, ReviewsSourceMeta } from "@/modules/reviews/types";
 
 export async function GET() {
   try {
-    const { reviews: rawReviews, source, fallbackReason, lastSyncedAt } =
-      await fetchHostawayReviews();
+    const hostawayResult = await fetchHostawayReviews();
+    const googleResult = await fetchGooglePlacesReviews();
 
-    const normalizedReviews = rawReviews.map((raw) => {
+    const combinedRawReviews = [
+      ...hostawayResult.reviews,
+      ...googleResult.reviews,
+    ];
+
+    const normalizedReviews = combinedRawReviews.map((raw) => {
       const review = normalizeHostawayReview(raw);
-      review.approved = approvalsStore.isApproved(review.id);
+      const manualApproval = approvalsStore.getApproval(review.id);
+      if (manualApproval !== undefined) {
+        review.approved = manualApproval;
+      }
+
       return review;
     });
 
     // Group by listing with aggregates
     const listingReviews = groupByListing(normalizedReviews);
+    const sourceMeta = toSourceMeta(hostawayResult);
+    const sources = buildSourcesMeta(hostawayResult, googleResult);
 
     return NextResponse.json({
       success: true,
       listings: listingReviews,
       totals: buildTotals(normalizedReviews),
-      source: {
-        type: source,
-        fallback: source === "mock" ? fallbackReason : undefined,
-        lastSyncedAt,
-      },
+      source: sourceMeta,
+      sources,
     });
   } catch (error) {
     console.error("Error fetching reviews:", error);
@@ -87,4 +102,40 @@ function buildTotals(reviews: Review[]) {
     channelBreakdown,
     categoryAverages,
   };
+}
+
+function toSourceMeta({
+  source,
+  fallbackReason,
+  lastSyncedAt,
+}: {
+  source: "hostaway" | "mock" | "google";
+  fallbackReason?: string;
+  lastSyncedAt: string;
+}): ReviewsSourceMeta {
+  return {
+    type: source,
+    fallback: source === "mock" ? fallbackReason : undefined,
+    lastSyncedAt,
+  };
+}
+
+function buildSourcesMeta(
+  hostawayResult: HostawayFetchResult,
+  googleResult: GoogleFetchResult
+): Record<string, ReviewsSourceMeta> {
+  const sources: Record<string, ReviewsSourceMeta> = {
+    hostaway: toSourceMeta(hostawayResult),
+  };
+
+  const shouldExposeGoogle =
+    googleResult.reviews.length > 0 ||
+    googleResult.source === "google" ||
+    googleResult.fallbackReason;
+
+  if (shouldExposeGoogle) {
+    sources.google = toSourceMeta(googleResult);
+  }
+
+  return sources;
 }

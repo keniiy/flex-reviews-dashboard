@@ -18,7 +18,7 @@ export function normalizeHostawayReview(raw: HostawayReviewRaw): Review {
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-|-$/g, "");
 
-  const channel = inferChannel(raw);
+  const channel = raw.channel ?? inferChannel(raw);
   const ratingOnFive =
     raw.rating !== null
       ? normalizeStarRating(raw.rating)
@@ -38,7 +38,7 @@ export function normalizeHostawayReview(raw: HostawayReviewRaw): Review {
     categories,
     channel,
     submittedAt: new Date(raw.submittedAt).toISOString(),
-    approved: false,
+    approved: Boolean(raw.approved),
     status,
   };
 }

@@ -64,7 +64,11 @@ export default function PropertyIndexPage() {
           ) : (
             <>
               <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
-                {paginatedListings.map((listing, index) => (
+                {paginatedListings.map((listing, index) => {
+                  const approvedReviews = listing.reviews.filter((review) => review.approved);
+                  const previewReviews =
+                    (approvedReviews.length > 0 ? approvedReviews : listing.reviews).slice(0, 2);
+                  return (
                   <Card key={listing.listingId} className="bg-card border-border overflow-hidden rounded-3xl shadow-sm">
                     <div className="relative h-56 overflow-hidden">
                       <Image
@@ -104,12 +108,29 @@ export default function PropertyIndexPage() {
                             </span>
                           ))}
                       </div>
+                      <div className="space-y-3 pt-3 border-t border-border/60">
+                        <div className="flex items-center justify-between text-xs uppercase tracking-wide text-muted">
+                          <span>Recent reviews</span>
+                          <span>{approvedReviews.length} approved</span>
+                        </div>
+                        <div className="space-y-3">
+                          {previewReviews.map((review) => (
+                            <blockquote key={review.id} className="bg-bg-surface rounded-2xl border border-border px-4 py-3 text-sm text-muted">
+                              <div className="flex items-center justify-between text-xs text-fg mb-1">
+                                <span className="font-semibold">{review.guestName}</span>
+                                <span className="capitalize">{review.channel}</span>
+                              </div>
+                              <p className="line-clamp-3">{review.review}</p>
+                            </blockquote>
+                          ))}
+                        </div>
+                      </div>
                       <Button asChild className="w-full bg-gradient-to-r from-brand-primary to-brand-hover text-white">
                         <Link href={`/property/${listing.listingId}`}>View property</Link>
                       </Button>
                     </CardContent>
                   </Card>
-                ))}
+                )})}
               </div>
               <Pagination
                 page={page}

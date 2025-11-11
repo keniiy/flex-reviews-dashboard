@@ -6,6 +6,7 @@
  */
 
 import type { HostawayReviewRaw } from "./types";
+import { Channel } from "./types";
 
 const GOOGLE_API_BASE_URL =
   "https://mybusinessaccountmanagement.googleapis.com/v1";
@@ -204,6 +205,7 @@ function normalizeGoogleBusinessReviews(
       submittedAt: review.createTime,
       guestName: review.reviewer.displayName,
       listingName: "Google Business Location",
+      channel: Channel.Google,
     };
   });
 }
@@ -225,6 +227,7 @@ function normalizeGooglePlacesReviews(
     submittedAt: new Date(review.time * 1000).toISOString(),
     guestName: review.author_name,
     listingName: `Google Place ${placeId}`,
+    channel: Channel.Google,
   }));
 }
 

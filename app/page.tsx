@@ -6,7 +6,8 @@ import Image from 'next/image';
 import { NavHeader } from '@/components/nav-header';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import type { ListingReviews, ReviewsApiResponse } from '@/modules/reviews/types';
+import { Badge } from '@/components/ui/badge';
+import type { ListingReviews, ReviewsApiResponse, ReviewsTotals, ReviewsSourceMeta } from '@/modules/reviews/types';
 import { FALLBACK_PHOTOS, buildPhotoUrl } from '@/components/property/photo-gallery';
 import { Star, ArrowRight } from 'lucide-react';
 import { MarketingHero } from '@/components/marketing/hero';
@@ -16,6 +17,8 @@ import { Pagination } from '@/components/ui/pagination';
 
 export default function HomePage() {
   const [listings, setListings] = useState<ListingReviews[]>([]);
+  const [totals, setTotals] = useState<ReviewsTotals | null>(null);
+  const [sourceMeta, setSourceMeta] = useState<ReviewsSourceMeta | null>(null);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
   const pageSize = 3;
@@ -27,6 +30,8 @@ export default function HomePage() {
         const data: ReviewsApiResponse = await response.json();
         if (data.success) {
           setListings(data.listings);
+          setTotals(data.totals);
+          setSourceMeta(data.source);
         }
       } catch (error) {
         console.error('Failed to load listings for home page', error);
@@ -46,22 +51,40 @@ export default function HomePage() {
 
       <main className="max-w-7xl mx-auto px-6 py-10 space-y-10">
         <MarketingHero
-          title="Reviews, insights, and guest stories in one place."
-          subtitle="Curate high-confidence testimonials, monitor property performance, and preview the guest-facing experience without leaving the dashboard."
+          title="Operational command center for Flex Living reviews."
+          subtitle="Preview live KPIs, spot pending approvals, and jump straight into the dashboard to curate what guests see."
           backgroundImage="https://images.unsplash.com/photo-1522708323590-d24dbb6b0267"
         >
-          <div className="grid gap-3 sm:grid-cols-4 bg-white/10 rounded-2xl p-4 backdrop-blur">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-center">
+            <Button
+              asChild
+              className="bg-white text-gray-900 hover:bg-white/90 font-semibold px-6 py-6 rounded-2xl"
+            >
+              <Link href="/dashboard">
+                Open dashboard
+                <ArrowRight className="w-4 h-4 ml-2" />
+              </Link>
+            </Button>
+            {sourceMeta && (
+              <div className="flex items-center gap-2 bg-white/10 rounded-2xl px-4 py-2 text-sm">
+                <Badge variant="secondary" className="bg-white/20 text-white border-white/30">
+                  {sourceMeta.type === 'hostaway' ? 'Live Hostaway data' : 'Mock data'}
+                </Badge>
+                <span className="text-white/80 text-xs">Last sync · {new Date(sourceMeta.lastSyncedAt).toLocaleString()}</span>
+              </div>
+            )}
+          </div>
+          <div className="grid gap-3 sm:grid-cols-3 bg-white/10 rounded-2xl p-4 backdrop-blur mt-4">
             {[
-              { label: 'Location', value: 'London' },
-              { label: 'Check-In', value: 'Select' },
-              { label: 'Check-Out', value: 'Select' },
-              { label: 'Guests', value: '2' },
+              { label: 'Properties', value: totals ? listings.length : '—' },
+              { label: 'Pending approvals', value: totals ? totals.pendingCount : '—' },
+              { label: 'Avg rating', value: totals ? totals.avgRating.toFixed(1) : '—' },
             ].map(({ label, value }) => (
               <div key={label} className="bg-white/15 rounded-xl px-3 py-2">
                 <div className="text-white/70 text-xs uppercase tracking-wide mb-1">
                   {label}
                 </div>
-                <div className="text-base font-semibold text-white">
+                <div className="text-xl font-semibold text-white">
                   {value}
                 </div>
               </div>
@@ -69,16 +92,68 @@ export default function HomePage() {
           </div>
         </MarketingHero>
 
+        <Section
+          title="Dashboard snapshot"
+          description="A glance at the KPIs you’ll manage once you open the dashboard."
+        >
+          {totals ? (
+            <div className="grid gap-4 md:grid-cols-3">
+              <Card className="bg-card border-border">
+                <CardContent className="p-6 space-y-2">
+                  <div className="text-xs uppercase text-muted tracking-wide">Total reviews</div>
+                  <div className="text-3xl font-semibold">{totals.totalReviews}</div>
+                  <p className="text-sm text-muted">Across {listings.length} properties</p>
+                </CardContent>
+              </Card>
+              <Card className="bg-card border-border">
+                <CardContent className="p-6 space-y-2">
+                  <div className="text-xs uppercase text-muted tracking-wide">Pending approvals</div>
+                  <div className="text-3xl font-semibold text-accent-red">{totals.pendingCount}</div>
+                  <p className="text-sm text-muted">
+                    {totals.approvedCount} approved · {Math.round((totals.approvedCount / Math.max(1, totals.totalReviews)) * 100)}% publish-ready
+                  </p>
+                </CardContent>
+              </Card>
+              <Card className="bg-card border-border">
+                <CardContent className="p-6 space-y-3">
+                  <div className="text-xs uppercase text-muted tracking-wide">Channel mix</div>
+                  {Object.entries(totals.channelBreakdown)
+                    .sort(([, a], [, b]) => b - a)
+                    .slice(0, 3)
+                    .map(([channel, count]) => {
+                      const pct = Math.round((count / totals.totalReviews) * 100);
+                      return (
+                        <div key={channel}>
+                          <div className="flex justify-between text-sm">
+                            <span className="capitalize">{channel}</span>
+                            <span className="text-muted">{pct}%</span>
+                          </div>
+                          <div className="w-full bg-border rounded-full h-1.5">
+                            <div className="h-1.5 rounded-full bg-white/70" style={{ width: `${pct}%` }} />
+                          </div>
+                        </div>
+                      );
+                    })}
+                </CardContent>
+              </Card>
+            </div>
+          ) : (
+            <Card className="bg-card border-border">
+              <CardContent className="p-6 text-muted">Syncing dashboard snapshot…</CardContent>
+            </Card>
+          )}
+        </Section>
+
         <div className="grid gap-6 md:grid-cols-2">
           <CTACard
-            title="Operations dashboard"
-            body="Approve guest reviews, monitor channel performance, and surface testimonials that align with the Flex Living brand."
+            title="Open the dashboard"
+            body="Approve guest reviews, audit channel performance, and keep the property pages on-message."
             href="/dashboard"
             buttonLabel="Open dashboard"
           />
           <CTACard
-            title="Public property pages"
-            body="Preview the guest-facing pages that inherit approved reviews and mirror the Flex Living marketing site."
+            title="Preview property pages"
+            body="See how approved reviews flow onto the guest-facing experience before it ships live."
             href="/property"
             buttonLabel="Explore listings"
             variant="secondary"
@@ -87,7 +162,7 @@ export default function HomePage() {
 
         <Section
           title="Featured properties"
-          description="Automatically sourced from the reviews dataset."
+          description="Sample of listings pulled from live review data. Approvals on the dashboard instantly shape these cards."
           actions={
             <Button asChild variant="outline" className="border-border text-fg">
               <Link href="/property">
@@ -106,11 +181,16 @@ export default function HomePage() {
                   ? Array.from({ length: 3 }).map((_, index) => (
                       <SkeletonCard key={index} />
                     ))
-                  : paginated.map((listing, index) => (
-                      <Card
-                        key={listing.listingId}
-                        className="bg-card border-border overflow-hidden rounded-3xl shadow-sm"
-                      >
+                  : paginated.map((listing, index) => {
+                      const approvedReview =
+                        listing.reviews.find((review) => review.approved) ?? listing.reviews[0];
+                      const pendingCount = listing.reviews.filter((review) => !review.approved).length;
+
+                      return (
+                        <Card
+                          key={listing.listingId}
+                          className="bg-card border-border overflow-hidden rounded-3xl shadow-sm"
+                        >
                         <div className="relative h-56">
                           <Image
                             src={buildPhotoUrl(
@@ -130,6 +210,11 @@ export default function HomePage() {
                               {listing.avgRating.toFixed(1)}
                               <Star className="w-4 h-4 fill-current" />
                             </span>
+                            {pendingCount > 0 && (
+                              <span className="bg-white/90 text-gray-900 px-3 py-1 rounded-full text-xs font-semibold">
+                                {pendingCount} pending
+                              </span>
+                            )}
                           </div>
                         </div>
                         <CardContent className="p-6 space-y-3">
@@ -151,15 +236,35 @@ export default function HomePage() {
                                 </span>
                               ))}
                           </div>
-                          <Button
-                            asChild
-                            className="w-full bg-gradient-to-r from-brand-primary to-brand-hover text-white"
-                          >
-                            <Link href={`/property/${listing.listingId}`}>View property</Link>
-                          </Button>
+                          {approvedReview && (
+                            <blockquote className="bg-bg-surface border border-border rounded-2xl p-4 text-sm text-muted">
+                              <p className="max-h-24 overflow-hidden">&ldquo;{approvedReview.review}&rdquo;</p>
+                              <span className="mt-2 block text-xs uppercase tracking-wide text-fg">
+                                {approvedReview.guestName}
+                              </span>
+                            </blockquote>
+                          )}
+                          <div className="flex flex-col gap-2">
+                            <Button
+                              asChild
+                              className="w-full bg-gradient-to-r from-brand-primary to-brand-hover text-white"
+                            >
+                              <Link href={`/property/${listing.listingId}`}>View property</Link>
+                            </Button>
+                            <Button
+                              asChild
+                              variant="outline"
+                              className="w-full border-border text-fg hover:bg-bg-surface"
+                            >
+                              <Link href={`/dashboard?listing=${listing.listingId}`}>
+                                Manage in dashboard
+                              </Link>
+                            </Button>
+                          </div>
                         </CardContent>
                       </Card>
-                    ))}
+                      );
+                    })}
               </div>
               <Pagination
                 page={page}

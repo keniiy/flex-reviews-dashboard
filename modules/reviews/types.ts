@@ -9,6 +9,7 @@ export enum Channel {
   Airbnb = "airbnb",
   Booking = "booking",
   Direct = "direct",
+  Google = "google",
 }
 
 export enum ReviewType {
@@ -29,6 +30,8 @@ export interface HostawayReviewRaw {
   submittedAt: string;
   guestName: string;
   listingName: string;
+  channel?: Channel;
+  approved?: boolean;
 }
 
 // Normalized review for our dashboard
@@ -75,7 +78,7 @@ export interface ReviewsTotals {
 }
 
 export interface ReviewsSourceMeta {
-  type: "hostaway" | "mock";
+  type: "hostaway" | "mock" | "google";
   fallback?: string;
   lastSyncedAt: string;
 }
@@ -85,4 +88,5 @@ export interface ReviewsApiResponse {
   listings: ListingReviews[];
   totals: ReviewsTotals;
   source: ReviewsSourceMeta;
+  sources?: Record<string, ReviewsSourceMeta>;
 }

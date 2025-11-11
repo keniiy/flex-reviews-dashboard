@@ -45,6 +45,3 @@ Without credentials the app automatically uses the bundled mock dataset so you c
 - `/property` – marketing-facing listing explorer with hero, featured cards, and CTA sections.
 - `/property/[listingId]` – property detail layout with gallery, amenities, booking widget, and curated reviews.
 - `/reviews/[reviewId]` – single-review deep dive with approve/unapprove controls and property context.
-
-## Documentation
-Additional architectural notes, data-flow diagrams, and the Google Reviews exploration can be found in [`docs/IMPLEMENTATION.md`](docs/IMPLEMENTATION.md).
