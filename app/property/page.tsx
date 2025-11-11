@@ -75,7 +75,7 @@ export default function PropertyIndexPage() {
                         className="object-cover"
                       />
                       <div className="absolute top-4 left-4 flex flex-col gap-2">
-                        <Badge className="bg-[var(--color-accent-red)] border-none text-white px-4 py-1 rounded-full text-xs uppercase tracking-wide">
+                        <Badge className="bg-accent-red border-none text-white px-4 py-1 rounded-full text-xs uppercase tracking-wide">
                           All listings
                         </Badge>
                         <span className="bg-white/90 text-gray-900 px-3 py-1 rounded-full text-sm font-semibold flex items-center gap-1">
@@ -141,7 +141,7 @@ export default function PropertyIndexPage() {
             Need bespoke stay lengths, unit availability, or enterprise pricing? Our guest experience team is available 24/7.
           </p>
           <div className="flex flex-wrap gap-3">
-            <Button variant="secondary" asChild className="bg-white text-[#0f5c4f] hover:bg-white/90">
+            <Button variant="secondary" asChild className="bg-white text-brand-primary hover:bg-white/90">
               <a href="mailto:bookings@flexliving.uk">bookings@flexliving.uk</a>
             </Button>
             <Button variant="ghost" asChild className="text-white hover:bg-white/10">

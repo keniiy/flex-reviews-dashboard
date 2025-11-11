@@ -1,57 +1,84 @@
 @import "tailwindcss";
 
-@theme inline {
-  --color-bg-primary: #f8f4ed;
-  --color-bg-surface: #ffffff;
-  --color-bg-card: #ffffff;
-
-  --color-brand-primary: #0f5c4f;
-  --color-brand-hover: #0b4037;
-  --color-brand-light: #157c6a;
-  --color-accent-red: #c82921;
-
-  --color-text-primary: #102621;
-  --color-text-secondary: #3b4d4a;
-  --color-text-muted: #7a8b87;
-
-  --color-border: #e5dfd4;
-  --color-border-light: #f4ede3;
-
-  --color-success: #0a8c74;
-  --color-warning: #c56a1a;
-  --color-error: #c03f3f;
-
-  --shadow-card: 0 15px 35px rgba(15, 92, 79, 0.08);
-
-  --gradient-brand: linear-gradient(135deg, #0f5c4f 0%, #0b4037 100%);
-  --gradient-card: linear-gradient(135deg, #fff 0%, #f5efe5 100%);
-
-  --font-sans: "Inter", system-ui, sans-serif;
-}
-
+/* Runtime palette that gets flipped via the html.dark class */
 :root {
   color-scheme: light;
+  --theme-bg-primary: #f8f4ed;
+  --theme-bg-surface: #ffffff;
+  --theme-card: #ffffff;
+  --theme-card-foreground: #102621;
+  --theme-fg: #102621;
+  --theme-text-secondary: #3b4d4a;
+  --theme-muted: #7a8b87;
+  --theme-muted-foreground: #6a7975;
+  --theme-brand-primary: #0f5c4f;
+  --theme-brand-hover: #0b4037;
+  --theme-brand-light: #157c6a;
+  --theme-accent-red: #c82921;
+  --theme-border: #e5dfd4;
+  --theme-border-light: #f4ede3;
+  --theme-success: #0a8c74;
+  --theme-warning: #c56a1a;
+  --theme-error: #c03f3f;
+  --theme-shadow-card: 0 15px 35px rgba(15, 92, 79, 0.08);
+  --theme-gradient-brand: linear-gradient(135deg, #0f5c4f 0%, #0b4037 100%);
+  --theme-gradient-card: linear-gradient(135deg, #fff 0%, #f5efe5 100%);
 }
 
 .dark {
-  --color-bg-primary: #050607;
-  --color-bg-surface: #0e1114;
-  --color-bg-card: #15191f;
-  --color-brand-primary: #13b38f;
-  --color-brand-hover: #0d8a6c;
-  --color-brand-light: #2cd6b5;
-  --color-text-primary: #f5f7fb;
-  --color-text-secondary: #cbd5f5;
-  --color-text-muted: #8f9ab5;
-  --color-border: #1f2937;
-  --color-border-light: #2e3746;
-  --shadow-card: 0 15px 35px rgba(0, 0, 0, 0.4);
   color-scheme: dark;
+  --theme-bg-primary: #050607;
+  --theme-bg-surface: #0e1114;
+  --theme-card: #15191f;
+  --theme-card-foreground: #f5f7fb;
+  --theme-fg: #f5f7fb;
+  --theme-text-secondary: #cbd5f5;
+  --theme-muted: #8f9ab5;
+  --theme-muted-foreground: #a7b4d0;
+  --theme-brand-primary: #13b38f;
+  --theme-brand-hover: #0d8a6c;
+  --theme-brand-light: #2cd6b5;
+  --theme-accent-red: #de5a52;
+  --theme-border: #1f2937;
+  --theme-border-light: #2e3746;
+  --theme-success: #13b38f;
+  --theme-warning: #f0b865;
+  --theme-error: #f87171;
+  --theme-shadow-card: 0 15px 35px rgba(0, 0, 0, 0.4);
+  --theme-gradient-brand: linear-gradient(135deg, #13b38f 0%, #0d8a6c 100%);
+  --theme-gradient-card: linear-gradient(135deg, #15191f 0%, #0e1114 100%);
+}
+
+@theme inline {
+  --color-bg-primary: var(--theme-bg-primary);
+  --color-bg-surface: var(--theme-bg-surface);
+  --color-bg-card: var(--theme-card);
+  --color-card: var(--theme-card);
+  --color-card-foreground: var(--theme-card-foreground);
+  --color-fg: var(--theme-fg);
+  --color-text-primary: var(--theme-fg);
+  --color-text-secondary: var(--theme-text-secondary);
+  --color-text-muted: var(--theme-muted);
+  --color-muted: var(--theme-muted);
+  --color-muted-foreground: var(--theme-muted-foreground);
+  --color-brand-primary: var(--theme-brand-primary);
+  --color-brand-hover: var(--theme-brand-hover);
+  --color-brand-light: var(--theme-brand-light);
+  --color-accent-red: var(--theme-accent-red);
+  --color-border: var(--theme-border);
+  --color-border-light: var(--theme-border-light);
+  --color-success: var(--theme-success);
+  --color-warning: var(--theme-warning);
+  --color-error: var(--theme-error);
+  --shadow-card: var(--theme-shadow-card);
+  --gradient-brand: var(--theme-gradient-brand);
+  --gradient-card: var(--theme-gradient-card);
+  --font-sans: "Inter", system-ui, sans-serif;
 }
 
 body {
   background-color: var(--color-bg-primary);
-  color: var(--color-text-primary);
+  color: var(--color-fg);
   font-family: var(--font-sans);
   min-height: 100vh;
 }
@@ -84,4 +111,20 @@ body {
   border: 1px solid var(--color-border);
   font-size: 0.85rem;
   color: var(--color-text-secondary);
+}
+
+.bg-brand-primary {
+  background-color: var(--color-brand-primary);
+}
+
+.bg-brand-hover {
+  background-color: var(--color-brand-hover);
+}
+
+.text-brand-primary {
+  color: var(--color-brand-primary);
+}
+
+.bg-accent-red {
+  background-color: var(--color-accent-red);
 }

@@ -97,7 +97,7 @@ export default function PropertyPage() {
           <section className="lg:col-span-2 space-y-8">
             <div className="bg-card border border-border rounded-3xl p-8 space-y-6">
               <div className="flex flex-col gap-4">
-                <Badge className="bg-[#c82921] border-none text-white px-4 py-1 rounded-full text-xs uppercase tracking-wide w-fit">
+                <Badge className="bg-accent-red border-none text-white px-4 py-1 rounded-full text-xs uppercase tracking-wide w-fit">
                   All listings
                 </Badge>
                 <h1 className="text-3xl font-bold">{listing.listingName}</h1>

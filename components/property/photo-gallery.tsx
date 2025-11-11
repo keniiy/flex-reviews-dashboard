@@ -41,7 +41,7 @@ export function PhotoGallery({ propertyName, photos, rating }: PhotoGalleryProps
           priority
         />
         <div className="absolute top-4 left-4 flex flex-col gap-2">
-          <Badge className="bg-[#c82921] border-none text-white px-4 py-1 rounded-full text-xs uppercase tracking-wide">
+          <Badge className="bg-accent-red border-none text-white px-4 py-1 rounded-full text-xs uppercase tracking-wide">
             All listings
           </Badge>
           <span className="bg-white/85 text-gray-900 px-4 py-1.5 rounded-full text-sm font-semibold shadow">
@@ -49,7 +49,7 @@ export function PhotoGallery({ propertyName, photos, rating }: PhotoGalleryProps
           </span>
         </div>
         <div className="absolute top-4 right-4">
-          <span className="bg-[#0f5c4f] text-white px-3 py-1.5 rounded-full text-sm font-semibold flex items-center gap-1">
+          <span className="bg-brand-primary text-white px-3 py-1.5 rounded-full text-sm font-semibold flex items-center gap-1">
             {displayRating.toFixed(2)}
             <StarIcon className="w-4 h-4 fill-white text-white" />
           </span>

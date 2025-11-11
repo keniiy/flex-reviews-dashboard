@@ -123,7 +123,7 @@ export default function HomePage() {
                             className="object-cover"
                           />
                           <div className="absolute top-4 left-4 flex flex-col gap-2">
-                            <span className="bg-[var(--color-accent-red)] text-white text-xs uppercase tracking-wide px-3 py-1 rounded-full">
+                            <span className="bg-accent-red text-white text-xs uppercase tracking-wide px-3 py-1 rounded-full">
                               All listings
                             </span>
                             <span className="bg-white/90 text-gray-900 px-3 py-1 rounded-full text-sm font-semibold flex items-center gap-1">
