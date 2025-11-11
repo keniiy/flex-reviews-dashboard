@@ -17,7 +17,7 @@ cp .env.example .env.local   # drop the provided Hostaway credentials if you hav
 npm install
 npm run dev
 ```
-Open [http://localhost:3000](http://localhost:3000). The root route redirects to `/dashboard`.
+Open [http://localhost:3000](http://localhost:3000). The root route now shows an admin-focused landing page with live KPIs and shortcuts into the dashboard.
 
 ## Environment Variables
 | Key | Description |
@@ -25,12 +25,17 @@ Open [http://localhost:3000](http://localhost:3000). The root route redirects to
 | `HOSTAWAY_ACCOUNT_ID` | Hostaway account ID (61148 for the sandbox). |
 | `HOSTAWAY_API_KEY` | API key/token used to mint short-lived access tokens. |
 | `HOSTAWAY_API_BASE_URL` | Optional override (defaults to `https://api.hostaway.com/v1`). |
+| `GOOGLE_PLACES_API_KEY` | Server-side key used for Google Places Text Search + Details requests. |
+| `GOOGLE_PLACE_ID` | Optional ID for the global Google review feed that powers the dashboard aggregates. |
 
 Without credentials the app automatically uses the bundled mock dataset so you can still explore every screen.
 
 ## API Routes
-- `GET /api/reviews/hostaway` – Fetches Hostaway reviews, normalizes + groups them, and returns aggregate metrics alongside per-listing insights.
+- `GET /api/reviews/hostaway` – Fetches Hostaway reviews, normalizes + groups them, and returns aggregate metrics alongside per-listing insights (with Google Places data blended in when available).
 - `POST /api/reviews/approve` – Toggles whether a review should appear publicly. Uses an in-memory store that simulates what a database table would provide.
+- `GET /api/reviews/google?listingName=London+Loft` – On-demand Google Places lookup for a specific listing name; used by the property detail page to surface Google reviews only when there’s a confident match.
+
+The approval store now persists to `data/approvals.json` so your decisions survive API restarts, and the property page automatically searches Google Places for the listing name and shows any matched reviews beneath the Hostaway feed (otherwise it surfaces a “No Google reviews” state along with the matching attempt).
 
 ## Useful Scripts
 | Command | Description |

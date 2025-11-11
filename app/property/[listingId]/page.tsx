@@ -9,7 +9,7 @@ import { PhotoGallery } from "@/components/property/photo-gallery";
 import { BookingWidget } from "@/components/property/booking-widget";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import type { ListingReviews } from "@/modules/reviews/types";
+import type { ListingReviews, Review } from "@/modules/reviews/types";
 
 const AMENITIES = [
   "Free WiFi",
@@ -23,6 +23,10 @@ export default function PropertyPage() {
   const listingId = params.listingId as string;
   const [listing, setListing] = useState<ListingReviews | null>(null);
   const [loading, setLoading] = useState(true);
+  const [googleReviews, setGoogleReviews] = useState<Review[]>([]);
+  const [googleLoading, setGoogleLoading] = useState(false);
+  const [googleError, setGoogleError] = useState<string | null>(null);
+  const [googlePlaceName, setGooglePlaceName] = useState<string | null>(null);
 
   useEffect(() => {
     const loadProperty = async () => {
@@ -46,6 +50,47 @@ export default function PropertyPage() {
 
     loadProperty();
   }, [listingId]);
+
+  const listingName = listing?.listingName ?? '';
+
+  useEffect(() => {
+    if (!listingName) {
+      setGoogleReviews([]);
+      return;
+    }
+
+    const controller = new AbortController();
+    const loadGoogle = async () => {
+      try {
+        setGoogleLoading(true);
+        setGoogleError(null);
+        const response = await fetch(
+          `/api/reviews/google?listingName=${encodeURIComponent(listingName)}`,
+          { signal: controller.signal }
+        );
+        if (!response.ok) {
+          throw new Error("Unable to fetch Google reviews");
+        }
+        const payload = await response.json();
+        if (!payload.success) {
+          throw new Error(payload.error || "Google reviews unavailable");
+        }
+        setGoogleReviews(payload.reviews ?? []);
+        setGooglePlaceName(payload.meta?.placeName ?? null);
+      } catch (error) {
+        if ((error as Error).name === "AbortError") return;
+        setGoogleError(
+          error instanceof Error ? error.message : "Failed to load Google reviews"
+        );
+      } finally {
+        setGoogleLoading(false);
+      }
+    };
+
+    loadGoogle();
+
+    return () => controller.abort();
+  }, [listingName]);
 
   if (loading) {
     return (
@@ -230,6 +275,63 @@ export default function PropertyPage() {
                       Show all {approvedReviews.length} reviews
                     </Button>
                   )}
+                </div>
+              )}
+            </div>
+
+            <div className="bg-card border border-border rounded-3xl p-8 space-y-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="text-2xl font-bold">Google reviews</h2>
+                  <p className="text-sm text-muted">
+                    {googlePlaceName
+                      ? `Matched place: ${googlePlaceName}`
+                      : 'Automatically searches Google Places for this listing name'}
+                  </p>
+                </div>
+                <Badge variant="secondary" className="text-xs">
+                  {googleReviews.length} found
+                </Badge>
+              </div>
+
+              {googleLoading ? (
+                <p className="text-muted">Looking up Google reviews…</p>
+              ) : googleError ? (
+                <p className="text-error">{googleError}</p>
+              ) : googleReviews.length === 0 ? (
+                <div className="text-center py-8 bg-bg-surface rounded-2xl border border-border/60 text-muted">
+                  No Google reviews found for this listing yet.
+                </div>
+              ) : (
+                <div className="space-y-6">
+                  {googleReviews.map((review) => (
+                    <div key={review.id} className="border border-border rounded-2xl p-5">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <div className="font-semibold">{review.guestName}</div>
+                          <div className="text-xs text-muted">
+                            {new Date(review.submittedAt).toLocaleDateString('en-US', {
+                              year: 'numeric',
+                              month: 'long',
+                            })}
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          {[...Array(5)].map((_, i) => (
+                            <Star
+                              key={i}
+                              className={`w-4 h-4 ${
+                                i < Math.round(review.rating)
+                                  ? 'text-amber-500 fill-amber-500'
+                                  : 'text-border'
+                              }`}
+                            />
+                          ))}
+                        </div>
+                      </div>
+                      <p className="text-muted mt-3 leading-relaxed">{review.review}</p>
+                    </div>
+                  ))}
                 </div>
               )}
             </div>

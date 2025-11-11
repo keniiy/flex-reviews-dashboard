@@ -11,6 +11,8 @@ import { Channel } from "./types";
 const GOOGLE_API_BASE_URL =
   "https://mybusinessaccountmanagement.googleapis.com/v1";
 const GOOGLE_PLACES_API_URL = "https://maps.googleapis.com/maps/api/place";
+const GOOGLE_PLACES_TEXTSEARCH_URL =
+  "https://maps.googleapis.com/maps/api/place/textsearch/json";
 
 export interface GoogleReviewRaw {
   reviewId: string;
@@ -46,6 +48,14 @@ export interface GoogleFetchResult {
   fallbackReason?: string;
   lastSyncedAt: string;
 }
+
+export interface GoogleListingFetchResult extends GoogleFetchResult {
+  query: string;
+  placeId?: string;
+  placeName?: string;
+}
+
+const placeIdCache = new Map<string, { placeId: string; placeName: string }>();
 
 /**
  * Fetch reviews using Google My Business API (requires OAuth2)
@@ -131,6 +141,61 @@ export async function fetchGooglePlacesReviews(): Promise<GoogleFetchResult> {
   }
 }
 
+export async function fetchGoogleReviewsForListing(
+  listingName: string
+): Promise<GoogleListingFetchResult> {
+  const apiKey = process.env.GOOGLE_PLACES_API_KEY;
+  const lastSyncedAt = new Date().toISOString();
+
+  if (!apiKey) {
+    return {
+      source: "mock",
+      reviews: [],
+      fallbackReason: "Missing Google Places API key",
+      lastSyncedAt,
+      query: listingName,
+    };
+  }
+
+  const resolved = await resolvePlaceId(listingName, apiKey);
+
+  if (!resolved) {
+    return {
+      source: "mock",
+      reviews: [],
+      fallbackReason: "No matching Google place found",
+      lastSyncedAt,
+      query: listingName,
+    };
+  }
+
+  try {
+    const reviews = await requestGooglePlacesReviews(apiKey, resolved.placeId);
+    const normalized = normalizeGooglePlacesReviews(reviews, resolved.placeId);
+
+    return {
+      source: "google",
+      reviews: normalized,
+      lastSyncedAt,
+      query: listingName,
+      placeId: resolved.placeId,
+      placeName: resolved.placeName,
+    };
+  } catch (error) {
+    console.error("Google Places lookup failed", error);
+    return {
+      source: "mock",
+      reviews: [],
+      fallbackReason:
+        error instanceof Error ? error.message : "Unknown Google Places error",
+      lastSyncedAt,
+      query: listingName,
+      placeId: resolved.placeId,
+      placeName: resolved.placeName,
+    };
+  }
+}
+
 // ============================================================================
 // Private Helper Functions
 // ============================================================================
@@ -185,6 +250,35 @@ async function requestGooglePlacesReviews(
   return data.result?.reviews || [];
 }
 
+async function requestGooglePlaceSearch(
+  apiKey: string,
+  query: string
+): Promise<{ placeId: string; placeName: string } | null> {
+  const url = new URL(GOOGLE_PLACES_TEXTSEARCH_URL);
+  url.searchParams.set("query", query);
+  url.searchParams.set("key", apiKey);
+
+  const response = await fetch(url, { cache: "no-store" });
+
+  if (!response.ok) {
+    throw new Error(
+      `Google Places TextSearch error: ${response.status} ${response.statusText}`
+    );
+  }
+
+  const data = await response.json();
+
+  if (data.status !== "OK" || !Array.isArray(data.results) || !data.results[0]) {
+    return null;
+  }
+
+  const bestMatch = data.results[0];
+  return {
+    placeId: bestMatch.place_id,
+    placeName: bestMatch.name,
+  };
+}
+
 /**
  * Convert Google Business reviews to our normalized format
  */
@@ -229,6 +323,20 @@ function normalizeGooglePlacesReviews(
     listingName: `Google Place ${placeId}`,
     channel: Channel.Google,
   }));
+}
+
+async function resolvePlaceId(query: string, apiKey: string) {
+  if (placeIdCache.has(query)) {
+    return placeIdCache.get(query)!;
+  }
+
+  const match = await requestGooglePlaceSearch(apiKey, query);
+
+  if (match) {
+    placeIdCache.set(query, match);
+  }
+
+  return match;
 }
 
 /**
