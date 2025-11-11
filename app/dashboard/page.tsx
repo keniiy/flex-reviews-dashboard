@@ -13,6 +13,7 @@ import {
   ArrowDownRight,
   ArrowUpRight,
   CheckCircle,
+  ChevronDown,
   Clock,
   Filter,
   MessageSquare,
@@ -20,7 +21,7 @@ import {
   TrendingUp,
 } from 'lucide-react';
 import { NavHeader } from '@/components/nav-header';
-import type { ListingReviews, ReviewsApiResponse, ReviewsSourceMeta, ReviewsTotals } from '@/modules/reviews/types';
+import type { ListingReviews, ReviewsApiResponse, ReviewsTotals } from '@/modules/reviews/types';
 import { filterReviews, sortReviews } from '@/modules/reviews/service';
 
 const ratingOptions = [
@@ -42,8 +43,6 @@ const formatCategoryLabel = (category: string) => category.replace(/_/g, ' ');
 export default function DashboardPage() {
   const [listings, setListings] = useState<ListingReviews[]>([]);
   const [totals, setTotals] = useState<ReviewsTotals | null>(null);
-  const [sourceMeta, setSourceMeta] = useState<ReviewsSourceMeta | null>(null);
-  const [sourcesMeta, setSourcesMeta] = useState<Record<string, ReviewsSourceMeta>>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -54,6 +53,7 @@ export default function DashboardPage() {
   const [showApprovedOnly, setShowApprovedOnly] = useState(false);
   const [sortBy, setSortBy] = useState<'date' | 'rating'>('date');
   const [page, setPage] = useState(1);
+  const [openListingId, setOpenListingId] = useState<string | null>(null);
   const pageSize = 2;
 
   const fetchReviews = useCallback(async () => {
@@ -70,8 +70,6 @@ export default function DashboardPage() {
       }
       setListings(data.listings);
       setTotals(data.totals);
-      setSourceMeta(data.source);
-      setSourcesMeta(data.sources ?? { hostaway: data.source });
     } catch (err) {
       console.error('Failed to fetch reviews:', err);
       setError(err instanceof Error ? err.message : 'Something went wrong');
@@ -86,6 +84,7 @@ export default function DashboardPage() {
 
   useEffect(() => {
     setPage(1);
+    setOpenListingId(null);
   }, [
     minRating,
     selectedChannel,
@@ -97,6 +96,56 @@ export default function DashboardPage() {
   ]);
 
   const handleApproval = async (reviewId: string, approved: boolean) => {
+    const target = listings
+      .flatMap((listing) => listing.reviews)
+      .find((review) => review.id === reviewId);
+
+    if (!target || target.approved === approved) {
+      return;
+    }
+
+    const delta = approved ? 1 : -1;
+
+    setListings((prev) =>
+      prev.map((listing) => {
+        if (!listing.reviews.some((review) => review.id === reviewId)) {
+          return listing;
+        }
+
+        const updatedReviews = listing.reviews.map((review) =>
+          review.id === reviewId ? { ...review, approved } : review
+        );
+
+        const insights = listing.insights
+          ? {
+              ...listing.insights,
+              approvalRate:
+                updatedReviews.length === 0
+                  ? 0
+                  :
+                    updatedReviews.filter((review) => review.approved).length /
+                    updatedReviews.length,
+            }
+          : listing.insights;
+
+        return {
+          ...listing,
+          reviews: updatedReviews,
+          insights,
+        };
+      })
+    );
+
+    setTotals((prev) =>
+      prev
+        ? {
+            ...prev,
+            approvedCount: prev.approvedCount + delta,
+            pendingCount: Math.max(0, prev.pendingCount - delta),
+          }
+        : prev
+    );
+
     try {
       const response = await fetch('/api/reviews/approve', {
         method: 'POST',
@@ -104,11 +153,12 @@ export default function DashboardPage() {
         body: JSON.stringify({ reviewId, approved }),
       });
 
-      if (response.ok) {
-        fetchReviews();
+      if (!response.ok) {
+        throw new Error('Approval API failed');
       }
     } catch (err) {
       console.error('Failed to update approval:', err);
+      fetchReviews();
     }
   };
 
@@ -193,6 +243,7 @@ export default function DashboardPage() {
   );
 
   const listingCards = paginatedListings.map(({ listing, filteredReviews }) => {
+    const isOpen = openListingId === listing.listingId;
     const trend = listing.insights?.recentTrend;
     const trendConfig: Record<
       string,
@@ -274,24 +325,45 @@ export default function DashboardPage() {
                     View property page
                   </Link>
                 </Button>
+                <Button
+                  variant="outline"
+                  className="border-border text-fg hover:bg-bg-surface"
+                  onClick={() =>
+                    setOpenListingId(isOpen ? null : listing.listingId)
+                  }
+                  aria-expanded={isOpen}
+                  aria-controls={`listing-reviews-${listing.listingId}`}
+                >
+                  {isOpen ? 'Hide reviews' : 'Show reviews'}
+                  <ChevronDown
+                    className={`w-4 h-4 transition-transform ${
+                      isOpen ? 'rotate-180' : ''
+                    }`}
+                  />
+                </Button>
               </div>
             </div>
           </CardHeader>
         </Card>
 
-        <div className="grid gap-4">
-          {filteredReviews.map((review) => (
-            <ReviewCard
-              key={review.id}
-              review={review}
-              detailHref={`/reviews/${review.id}`}
-              actions={{
-                onApprove: () => handleApproval(review.id, true),
-                onUnapprove: () => handleApproval(review.id, false),
-              }}
-            />
-          ))}
-        </div>
+        {isOpen && (
+          <div
+            id={`listing-reviews-${listing.listingId}`}
+            className="grid gap-4 border border-border rounded-2xl p-4"
+          >
+            {filteredReviews.map((review) => (
+              <ReviewCard
+                key={review.id}
+                review={review}
+                detailHref={`/reviews/${review.id}`}
+                actions={{
+                  onApprove: () => handleApproval(review.id, true),
+                  onUnapprove: () => handleApproval(review.id, false),
+                }}
+              />
+            ))}
+          </div>
+        )}
       </div>
     );
   });
@@ -309,17 +381,6 @@ export default function DashboardPage() {
                 <h1 className="text-3xl font-bold text-fg">Reviews Dashboard</h1>
                 <p className="text-muted mt-1">Track performance per property and curate testimonials</p>
               </div>
-              {sourceMeta && (
-                <div className="flex flex-col items-end text-right text-xs text-muted">
-                  <Badge variant={sourceMeta.type === 'hostaway' ? 'default' : 'secondary'} className="mb-1">
-                    {sourceMeta.type === 'hostaway' ? 'Live Hostaway data' : 'Mock data fallback'}
-                  </Badge>
-                  <span>Last sync · {new Date(sourceMeta.lastSyncedAt).toLocaleString()}</span>
-                  {sourceMeta.fallback && (
-                    <span className="text-warning mt-0.5">{sourceMeta.fallback}</span>
-                  )}
-                </div>
-              )}
             </div>
             {error && (
               <div className="flex items-center gap-2 text-sm text-red-400">
@@ -376,48 +437,6 @@ export default function DashboardPage() {
               </CardContent>
             </Card>
           </div>
-
-          {Object.keys(sourcesMeta).length > 0 && (
-            <Card className="bg-card border-border">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-sm text-muted">Integrations</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {Object.entries(sourcesMeta).map(([key, meta]) => {
-                  const label =
-                    key === "hostaway"
-                      ? "Hostaway Reviews"
-                      : key === "google"
-                        ? "Google Reviews"
-                        : key;
-                  const connected = meta.type !== "mock";
-
-                  return (
-                    <div
-                      key={key}
-                      className="flex flex-wrap items-center justify-between gap-2 border border-border/60 rounded-2xl px-4 py-3"
-                    >
-                      <div>
-                        <div className="font-medium text-fg">{label}</div>
-                        <div className="text-xs text-muted">
-                          Last sync · {new Date(meta.lastSyncedAt).toLocaleString()}
-                        </div>
-                        {meta.fallback && (
-                          <div className="text-xs text-warning mt-1">{meta.fallback}</div>
-                        )}
-                      </div>
-                      <Badge
-                        variant={connected ? "default" : "secondary"}
-                        className={connected ? "bg-success text-white border-none" : ""}
-                      >
-                        {connected ? "Connected" : "Mock data"}
-                      </Badge>
-                    </div>
-                  );
-                })}
-              </CardContent>
-            </Card>
-          )}
 
           <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
             <Card className="bg-card border-border xl:col-span-2">

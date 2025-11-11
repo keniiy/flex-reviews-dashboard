@@ -5,6 +5,8 @@
  * https://developers.google.com/my-business/reference/rest
  */
 
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from "fs";
+import path from "path";
 import type { HostawayReviewRaw } from "./types";
 import { Channel } from "./types";
 
@@ -55,7 +57,41 @@ export interface GoogleListingFetchResult extends GoogleFetchResult {
   placeName?: string;
 }
 
-const placeIdCache = new Map<string, { placeId: string; placeName: string }>();
+const DATA_DIR = path.join(process.cwd(), "data");
+const GOOGLE_PLACE_MAP_FILE = path.join(DATA_DIR, "google-places.json");
+
+function ensurePlaceMapFile() {
+  if (!existsSync(DATA_DIR)) {
+    mkdirSync(DATA_DIR, { recursive: true });
+  }
+  if (!existsSync(GOOGLE_PLACE_MAP_FILE)) {
+    writeFileSync(GOOGLE_PLACE_MAP_FILE, "{}", "utf-8");
+  }
+}
+
+function loadPersistedPlaceMap(): Map<string, { placeId: string; placeName: string }> {
+  try {
+    ensurePlaceMapFile();
+    const contents = readFileSync(GOOGLE_PLACE_MAP_FILE, "utf-8");
+    const parsed = JSON.parse(contents) as Record<string, { placeId: string; placeName: string }>;
+    return new Map(Object.entries(parsed));
+  } catch (error) {
+    console.error("Failed to read Google places map", error);
+    return new Map();
+  }
+}
+
+function persistPlaceMap(map: Map<string, { placeId: string; placeName: string }>) {
+  try {
+    ensurePlaceMapFile();
+    const payload = JSON.stringify(Object.fromEntries(map), null, 2);
+    writeFileSync(GOOGLE_PLACE_MAP_FILE, payload, "utf-8");
+  } catch (error) {
+    console.error("Failed to persist Google places map", error);
+  }
+}
+
+const placeIdCache = loadPersistedPlaceMap();
 
 /**
  * Fetch reviews using Google My Business API (requires OAuth2)
@@ -326,14 +362,17 @@ function normalizeGooglePlacesReviews(
 }
 
 async function resolvePlaceId(query: string, apiKey: string) {
-  if (placeIdCache.has(query)) {
-    return placeIdCache.get(query)!;
+  const key = query.trim().toLowerCase();
+
+  if (placeIdCache.has(key)) {
+    return placeIdCache.get(key)!;
   }
 
   const match = await requestGooglePlaceSearch(apiKey, query);
 
   if (match) {
-    placeIdCache.set(query, match);
+    placeIdCache.set(key, match);
+    persistPlaceMap(placeIdCache);
   }
 
   return match;
