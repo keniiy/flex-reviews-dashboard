@@ -4,6 +4,10 @@ import type { HostawayReviewRaw } from "./types";
 const HOSTAWAY_BASE_URL =
   process.env.HOSTAWAY_API_BASE_URL ?? "https://api.hostaway.com/v1";
 
+const DEFAULT_HOSTAWAY_ACCOUNT_ID = "61148";
+const DEFAULT_HOSTAWAY_API_KEY =
+  "f94377ebbbb479490bb3ec364649168dc443dda2e4830facaf5de2e74ccc9152";
+
 export interface HostawayFetchResult {
   source: "hostaway" | "mock";
   reviews: HostawayReviewRaw[];
@@ -12,8 +16,8 @@ export interface HostawayFetchResult {
 }
 
 export async function fetchHostawayReviews(): Promise<HostawayFetchResult> {
-  const accountId = process.env.HOSTAWAY_ACCOUNT_ID;
-  const apiKey = process.env.HOSTAWAY_API_KEY;
+  const accountId = process.env.HOSTAWAY_ACCOUNT_ID ?? DEFAULT_HOSTAWAY_ACCOUNT_ID;
+  const apiKey = process.env.HOSTAWAY_API_KEY ?? DEFAULT_HOSTAWAY_API_KEY;
   const lastSyncedAt = new Date().toISOString();
 
   if (!accountId || !apiKey) {

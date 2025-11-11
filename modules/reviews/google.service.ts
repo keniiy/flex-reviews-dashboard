@@ -59,6 +59,11 @@ export interface GoogleListingFetchResult extends GoogleFetchResult {
 
 const DATA_DIR = path.join(process.cwd(), "data");
 const GOOGLE_PLACE_MAP_FILE = path.join(DATA_DIR, "google-places.json");
+const GOOGLE_PLACE_OVERRIDES_FILE = path.join(
+  process.cwd(),
+  "config",
+  "google-places.overrides.json"
+);
 
 function ensurePlaceMapFile() {
   if (!existsSync(DATA_DIR)) {
@@ -92,6 +97,17 @@ function persistPlaceMap(map: Map<string, { placeId: string; placeName: string }
 }
 
 const placeIdCache = loadPersistedPlaceMap();
+const manualOverrides = loadManualOverrides();
+
+function loadManualOverrides(): Map<string, { placeId: string; placeName: string }> {
+  try {
+    const contents = readFileSync(GOOGLE_PLACE_OVERRIDES_FILE, "utf-8");
+    const parsed = JSON.parse(contents) as Record<string, { placeId: string; placeName: string }>;
+    return new Map(Object.entries(parsed));
+  } catch (error) {
+    return new Map();
+  }
+}
 
 /**
  * Fetch reviews using Google My Business API (requires OAuth2)
@@ -178,7 +194,8 @@ export async function fetchGooglePlacesReviews(): Promise<GoogleFetchResult> {
 }
 
 export async function fetchGoogleReviewsForListing(
-  listingName: string
+  listingName: string,
+  listingId?: string
 ): Promise<GoogleListingFetchResult> {
   const apiKey = process.env.GOOGLE_PLACES_API_KEY;
   const lastSyncedAt = new Date().toISOString();
@@ -193,7 +210,7 @@ export async function fetchGoogleReviewsForListing(
     };
   }
 
-  const resolved = await resolvePlaceId(listingName, apiKey);
+  const resolved = await resolvePlaceId(listingName, apiKey, listingId);
 
   if (!resolved) {
     return {
@@ -361,17 +378,29 @@ function normalizeGooglePlacesReviews(
   }));
 }
 
-async function resolvePlaceId(query: string, apiKey: string) {
-  const key = query.trim().toLowerCase();
+async function resolvePlaceId(query: string, apiKey: string, listingId?: string) {
+  const normalizedQuery = query.trim().toLowerCase();
 
-  if (placeIdCache.has(key)) {
-    return placeIdCache.get(key)!;
+  if (listingId && manualOverrides.has(listingId)) {
+    return manualOverrides.get(listingId)!;
+  }
+
+  if (listingId && placeIdCache.has(listingId)) {
+    return placeIdCache.get(listingId)!;
+  }
+
+  if (placeIdCache.has(normalizedQuery)) {
+    return placeIdCache.get(normalizedQuery)!;
   }
 
   const match = await requestGooglePlaceSearch(apiKey, query);
 
   if (match) {
-    placeIdCache.set(key, match);
+    if (listingId) {
+      placeIdCache.set(listingId, match);
+    } else {
+      placeIdCache.set(normalizedQuery, match);
+    }
     persistPlaceMap(placeIdCache);
   }
 
