@@ -48,8 +48,3 @@ Without credentials the app automatically uses the bundled mock dataset so you c
 
 ## Documentation
 Additional architectural notes, data-flow diagrams, and the Google Reviews exploration can be found in [`docs/IMPLEMENTATION.md`](docs/IMPLEMENTATION.md).
-
-## Next Steps
-- Persist approvals in a durable store (Supabase / Postgres) instead of memory.
-- Add automated unit tests around the normalization + analytics utilities.
-- Integrate Google Places reviews once billing-enabled credentials are available (outlined in the docs).
