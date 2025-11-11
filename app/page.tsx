@@ -143,21 +143,21 @@ export default function HomePage() {
             buttonLabel="Open dashboard"
           />
           <CTACard
-            title="Preview property pages"
-            body="See how approved reviews flow onto the guest-facing experience before it ships live."
+            title="Preview property catalogue"
+            body="Review how your approved testimonials surface on guest-facing listings before publishing updates."
             href="/property"
-            buttonLabel="Explore listings"
+            buttonLabel="Preview listings"
             variant="secondary"
           />
         </div>
 
         <Section
-          title="Featured properties"
-          description="Sample of listings pulled from live review data. Approvals on the dashboard instantly shape these cards."
+          title="Your featured listings"
+          description="Internal sample pulled from the reviews dataset. Dashboard approvals instantly shape these cards."
           actions={
             <Button asChild variant="outline" className="border-border text-fg">
               <Link href="/property">
-                View all listings
+                Manage listings
                 <ArrowRight className="w-4 h-4 ml-2" />
               </Link>
             </Button>
