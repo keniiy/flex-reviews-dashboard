@@ -6,7 +6,7 @@
 import {
   fetchGooglePlacesReviews,
   fetchGoogleBusinessReviews,
-} from "../modules/reviews/google.service";
+} from "../modules/reviews/services/google.service";
 
 async function testGooglePlacesAPI() {
   console.log("Testing Google Places API");

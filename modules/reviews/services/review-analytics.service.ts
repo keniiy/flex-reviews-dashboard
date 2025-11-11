@@ -1,4 +1,4 @@
-import { Review, ListingReviews, ListingInsights } from "./types";
+import type { Review, ListingReviews, ListingInsights } from "@/types/reviews";
 
 export interface FilterOptions {
   minRating?: number;

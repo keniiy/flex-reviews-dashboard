@@ -1,9 +1,8 @@
 import { mockHostawayReviews } from "@/lib/mock-data";
-import type { HostawayReviewRaw } from "./types";
+import type { HostawayReviewRaw } from "@/types/reviews";
 
 const HOSTAWAY_BASE_URL =
   process.env.HOSTAWAY_API_BASE_URL ?? "https://api.hostaway.com/v1";
-
 const DEFAULT_HOSTAWAY_ACCOUNT_ID = "61148";
 const DEFAULT_HOSTAWAY_API_KEY =
   "f94377ebbbb479490bb3ec364649168dc443dda2e4830facaf5de2e74ccc9152";
@@ -16,11 +15,15 @@ export interface HostawayFetchResult {
 }
 
 export async function fetchHostawayReviews(): Promise<HostawayFetchResult> {
-  const accountId = process.env.HOSTAWAY_ACCOUNT_ID ?? DEFAULT_HOSTAWAY_ACCOUNT_ID;
+  const accountId =
+    process.env.HOSTAWAY_ACCOUNT_ID ?? DEFAULT_HOSTAWAY_ACCOUNT_ID;
   const apiKey = process.env.HOSTAWAY_API_KEY ?? DEFAULT_HOSTAWAY_API_KEY;
   const lastSyncedAt = new Date().toISOString();
 
   if (!accountId || !apiKey) {
+    console.warn(
+      "[hostaway] Missing credentials, using bundled mock dataset for reviews."
+    );
     return {
       source: "mock",
       reviews: mockHostawayReviews,
@@ -31,7 +34,6 @@ export async function fetchHostawayReviews(): Promise<HostawayFetchResult> {
 
   try {
     const token = await requestAccessToken(accountId, apiKey);
-
     if (!token) {
       throw new Error("Hostaway token response did not include a token");
     }
@@ -39,6 +41,9 @@ export async function fetchHostawayReviews(): Promise<HostawayFetchResult> {
     const hostawayReviews = await requestReviews(token, accountId);
 
     if (hostawayReviews.length === 0) {
+      console.warn(
+        "[hostaway] API responded without review data, falling back to mock dataset."
+      );
       return {
         source: "mock",
         reviews: mockHostawayReviews,
@@ -46,6 +51,10 @@ export async function fetchHostawayReviews(): Promise<HostawayFetchResult> {
         lastSyncedAt,
       };
     }
+
+    console.info(
+      `[hostaway] Retrieved ${hostawayReviews.length} reviews from Hostaway API.`
+    );
 
     return {
       source: "hostaway",
@@ -110,7 +119,9 @@ async function requestReviews(token: string, accountId: string) {
   });
 
   if (!response.ok) {
-    throw new Error(`Unable to fetch Hostaway reviews (${response.statusText})`);
+    throw new Error(
+      `Unable to fetch Hostaway reviews (${response.statusText})`
+    );
   }
 
   const payload = await response.json();

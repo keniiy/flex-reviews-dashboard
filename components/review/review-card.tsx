@@ -5,7 +5,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { CheckCircle, ImageIcon, Star, XCircle, ExternalLink } from 'lucide-react';
-import type { Review } from '@/modules/reviews/types';
+import type { Review } from '@/types/reviews';
 
 interface ReviewCardActions {
   onApprove?: () => void;

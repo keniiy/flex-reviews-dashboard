@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -22,8 +22,8 @@ import {
   TrendingUp,
 } from 'lucide-react';
 import { NavHeader } from '@/components/nav-header';
-import type { ListingReviews, ReviewsApiResponse, ReviewsTotals } from '@/modules/reviews/types';
-import { filterReviews, sortReviews } from '@/modules/reviews/service';
+import { filterReviews, sortReviews } from '@/modules/reviews/services/review-analytics.service';
+import { useReviewsData } from '@/hooks/useReviewsData';
 
 const ratingOptions = [
   { label: 'All', value: '0' },
@@ -42,10 +42,15 @@ const timeframeOptions: { label: string; value: 'all' | '30' | '90' | '365' }[] 
 const formatCategoryLabel = (category: string) => category.replace(/_/g, ' ');
 
 export default function DashboardPage() {
-  const [listings, setListings] = useState<ListingReviews[]>([]);
-  const [totals, setTotals] = useState<ReviewsTotals | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const {
+    listings,
+    setListings,
+    totals,
+    setTotals,
+    loading,
+    error,
+    refresh: fetchReviews,
+  } = useReviewsData();
 
   const [minRating, setMinRating] = useState('0');
   const [selectedChannel, setSelectedChannel] = useState('all');
@@ -56,32 +61,6 @@ export default function DashboardPage() {
   const [page, setPage] = useState(1);
   const [openListingIds, setOpenListingIds] = useState<Record<string, boolean>>({});
   const pageSize = 2;
-
-  const fetchReviews = useCallback(async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      const response = await fetch('/api/reviews/hostaway');
-      if (!response.ok) {
-        throw new Error('Unable to load reviews');
-      }
-      const data: ReviewsApiResponse = await response.json();
-      if (!data.success) {
-        throw new Error('Reviews API responded with an error');
-      }
-      setListings(data.listings);
-      setTotals(data.totals);
-    } catch (err) {
-      console.error('Failed to fetch reviews:', err);
-      setError(err instanceof Error ? err.message : 'Something went wrong');
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    fetchReviews();
-  }, [fetchReviews]);
 
   useEffect(() => {
     setPage(1);

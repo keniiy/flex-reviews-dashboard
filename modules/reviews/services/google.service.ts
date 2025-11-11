@@ -7,8 +7,8 @@
 
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "fs";
 import path from "path";
-import type { HostawayReviewRaw } from "./types";
-import { Channel } from "./types";
+import type { HostawayReviewRaw } from "@/types/reviews";
+import { Channel } from "@/types/reviews";
 
 const GOOGLE_API_BASE_URL =
   "https://mybusinessaccountmanagement.googleapis.com/v1";

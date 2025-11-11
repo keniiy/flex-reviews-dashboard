@@ -7,12 +7,13 @@ import { approvalsStore } from "@/modules/reviews/approvals.store";
 import {
   fetchHostawayReviews,
   type HostawayFetchResult,
-} from "@/modules/reviews/hostaway.service";
+} from "@/modules/reviews/services/hostaway.service";
 import {
   fetchGooglePlacesReviews,
   type GoogleFetchResult,
-} from "@/modules/reviews/google.service";
-import type { Review, ReviewsSourceMeta } from "@/modules/reviews/types";
+} from "@/modules/reviews/services/google.service";
+import type { Review } from "@/types/reviews";
+import type { ReviewsSourceMeta } from "@/types/api";
 
 export async function GET() {
   try {

@@ -1,5 +1,5 @@
 import { faker } from "@faker-js/faker";
-import { HostawayReviewRaw } from "@/modules/reviews/types";
+import { HostawayReviewRaw } from "@/types/reviews";
 
 // Realistic property names
 const propertyNames = [

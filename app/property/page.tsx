@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useMemo, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { NavHeader } from '@/components/nav-header';
@@ -8,37 +8,21 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { FALLBACK_PHOTOS, buildPhotoUrl } from '@/components/property/photo-gallery';
-import type { ListingReviews, ReviewsApiResponse } from '@/modules/reviews/types';
 import { Star } from 'lucide-react';
 import { MarketingHero } from '@/components/marketing/hero';
 import { Section } from '@/components/layout/section';
 import { Pagination } from '@/components/ui/pagination';
+import { useReviewsData } from '@/hooks/useReviewsData';
 
 export default function PropertyIndexPage() {
-  const [listings, setListings] = useState<ListingReviews[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { listings, loading } = useReviewsData();
   const [page, setPage] = useState(1);
   const pageSize = 6;
 
-  useEffect(() => {
-    const fetchListings = async () => {
-      try {
-        const response = await fetch('/api/reviews/hostaway');
-        const data: ReviewsApiResponse = await response.json();
-        if (data.success) {
-          setListings(data.listings);
-        }
-      } catch (error) {
-        console.error('Failed to load listings', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchListings();
-  }, []);
-
-  const paginatedListings = listings.slice((page - 1) * pageSize, page * pageSize);
+  const paginatedListings = useMemo(
+    () => listings.slice((page - 1) * pageSize, page * pageSize),
+    [listings, page]
+  );
 
   return (
     <div className="min-h-screen bg-bg-primary text-fg">
@@ -66,8 +50,8 @@ export default function PropertyIndexPage() {
               <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
                 {paginatedListings.map((listing, index) => {
                   const approvedReviews = listing.reviews.filter((review) => review.approved);
-                  const previewReviews =
-                    (approvedReviews.length > 0 ? approvedReviews : listing.reviews).slice(0, 2);
+                  const previewReview =
+                    (approvedReviews.length > 0 ? approvedReviews : listing.reviews).slice(0, 1);
                   return (
                   <Card key={listing.listingId} className="bg-card border-border overflow-hidden rounded-3xl shadow-sm">
                     <div className="relative h-56 overflow-hidden">
@@ -108,13 +92,13 @@ export default function PropertyIndexPage() {
                             </span>
                           ))}
                       </div>
-                      <div className="space-y-3 pt-3 border-t border-border/60">
-                        <div className="flex items-center justify-between text-xs uppercase tracking-wide text-muted">
-                          <span>Recent reviews</span>
-                          <span>{approvedReviews.length} approved</span>
-                        </div>
-                        <div className="space-y-3">
-                          {previewReviews.map((review) => (
+                      {previewReview.length > 0 && (
+                        <div className="space-y-3 pt-3 border-t border-border/60">
+                          <div className="flex items-center justify-between text-xs uppercase tracking-wide text-muted">
+                            <span>Latest review</span>
+                            <span>{approvedReviews.length} approved</span>
+                          </div>
+                          {previewReview.map((review) => (
                             <blockquote key={review.id} className="bg-bg-surface rounded-2xl border border-border px-4 py-3 text-sm text-muted">
                               <div className="flex items-center justify-between text-xs text-fg mb-1">
                                 <span className="font-semibold">{review.guestName}</span>
@@ -124,7 +108,7 @@ export default function PropertyIndexPage() {
                             </blockquote>
                           ))}
                         </div>
-                      </div>
+                      )}
                       <Button asChild className="w-full bg-gradient-to-r from-brand-primary to-brand-hover text-white">
                         <Link href={`/property/${listing.listingId}`}>View property</Link>
                       </Button>

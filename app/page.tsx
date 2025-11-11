@@ -1,48 +1,28 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useMemo, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { NavHeader } from '@/components/nav-header';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import type { ListingReviews, ReviewsApiResponse, ReviewsTotals, ReviewsSourceMeta } from '@/modules/reviews/types';
 import { FALLBACK_PHOTOS, buildPhotoUrl } from '@/components/property/photo-gallery';
 import { Star, ArrowRight } from 'lucide-react';
 import { MarketingHero } from '@/components/marketing/hero';
 import { Section } from '@/components/layout/section';
 import { CTACard } from '@/components/marketing/cta-card';
 import { Pagination } from '@/components/ui/pagination';
+import { useReviewsData } from '@/hooks/useReviewsData';
 
 export default function HomePage() {
-  const [listings, setListings] = useState<ListingReviews[]>([]);
-  const [totals, setTotals] = useState<ReviewsTotals | null>(null);
-  const [, setSourceMeta] = useState<ReviewsSourceMeta | null>(null);
-  const [loading, setLoading] = useState(true);
+  const { listings, totals, loading } = useReviewsData();
   const [page, setPage] = useState(1);
   const pageSize = 3;
 
-  useEffect(() => {
-    const fetchListings = async () => {
-      try {
-        const response = await fetch('/api/reviews/hostaway');
-        const data: ReviewsApiResponse = await response.json();
-        if (data.success) {
-          setListings(data.listings);
-          setTotals(data.totals);
-          setSourceMeta(data.source);
-        }
-      } catch (error) {
-        console.error('Failed to load listings for home page', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchListings();
-  }, []);
-
-  const paginated = listings.slice((page - 1) * pageSize, page * pageSize);
+  const paginated = useMemo(
+    () => listings.slice((page - 1) * pageSize, page * pageSize),
+    [listings, page]
+  );
 
   return (
     <div className="min-h-screen bg-bg-primary text-fg">
@@ -176,6 +156,7 @@ export default function HomePage() {
                       const approvedReview =
                         listing.reviews.find((review) => review.approved) ?? listing.reviews[0];
                       const pendingCount = listing.reviews.filter((review) => !review.approved).length;
+                      const latestReview = approvedReview ? [approvedReview] : [];
 
                       return (
                         <Card
@@ -227,13 +208,22 @@ export default function HomePage() {
                                 </span>
                               ))}
                           </div>
-                          {approvedReview && (
-                            <blockquote className="bg-bg-surface border border-border rounded-2xl p-4 text-sm text-muted">
-                              <p className="max-h-24 overflow-hidden">&ldquo;{approvedReview.review}&rdquo;</p>
-                              <span className="mt-2 block text-xs uppercase tracking-wide text-fg">
-                                {approvedReview.guestName}
-                              </span>
-                            </blockquote>
+                          {latestReview.length > 0 && (
+                            <div className="space-y-3 pt-3 border-t border-border/60">
+                              <div className="flex items-center justify-between text-xs uppercase tracking-wide text-muted">
+                                <span>Latest review</span>
+                                <span>{approvedReview ? 'Approved' : 'Pending'}</span>
+                              </div>
+                              {latestReview.map((review) => (
+                                <blockquote key={review.id} className="bg-bg-surface border border-border rounded-2xl p-4 text-sm text-muted">
+                                  <div className="flex items-center justify-between text-xs text-fg mb-1">
+                                    <span className="font-semibold">{review.guestName}</span>
+                                    <span className="capitalize">{review.channel}</span>
+                                  </div>
+                                  <p className="line-clamp-3">{review.review}</p>
+                                </blockquote>
+                              ))}
+                            </div>
                           )}
                           <div className="flex flex-col gap-2">
                             <Button

@@ -10,7 +10,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { PhotoGallery } from '@/components/property/photo-gallery';
 import { BookingWidget } from '@/components/property/booking-widget';
-import type { ListingReviews, Review, ReviewsApiResponse } from '@/modules/reviews/types';
+import type { ListingReviews, Review } from '@/types/reviews';
+import type { ReviewsApiResponse } from '@/types/api';
 
 export default function ReviewDetailPage() {
   const params = useParams<{ reviewId: string }>();

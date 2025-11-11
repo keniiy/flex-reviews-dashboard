@@ -4,8 +4,8 @@ import {
   ListingReviews,
   Channel,
   ReviewStatus,
-} from "./types";
-import { computeInsights } from "./service";
+} from "@/types/reviews";
+import { computeInsights } from "@/modules/reviews/services/review-analytics.service";
 
 export function normalizeHostawayReview(raw: HostawayReviewRaw): Review {
   const categories = raw.reviewCategory.reduce((acc, cat) => {

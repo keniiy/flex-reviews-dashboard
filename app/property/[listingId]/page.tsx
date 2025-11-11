@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from "react";
+import { useMemo } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { Star } from "lucide-react";
@@ -9,7 +9,9 @@ import { PhotoGallery } from "@/components/property/photo-gallery";
 import { BookingWidget } from "@/components/property/booking-widget";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import type { ListingReviews, Review } from "@/modules/reviews/types";
+import type { ListingReviews } from "@/types/reviews";
+import { useReviewsData } from "@/hooks/useReviewsData";
+import { useGoogleReviews } from "@/hooks/useGoogleReviews";
 
 const AMENITIES = [
   "Free WiFi",
@@ -21,79 +23,19 @@ const AMENITIES = [
 export default function PropertyPage() {
   const params = useParams();
   const listingId = params.listingId as string;
-  const [listing, setListing] = useState<ListingReviews | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [googleReviews, setGoogleReviews] = useState<Review[]>([]);
-  const [googleLoading, setGoogleLoading] = useState(false);
-  const [googleError, setGoogleError] = useState<string | null>(null);
-  const [googlePlaceName, setGooglePlaceName] = useState<string | null>(null);
+  const { listings, loading: reviewsLoading } = useReviewsData();
+  const listing = useMemo<ListingReviews | null>(
+    () => listings.find((item) => item.listingId === listingId) ?? null,
+    [listings, listingId]
+  );
+  const {
+    reviews: googleReviews,
+    placeName: googlePlaceName,
+    loading: googleLoading,
+    error: googleError,
+  } = useGoogleReviews(listing?.listingName, listing?.listingId);
 
-  useEffect(() => {
-    const loadProperty = async () => {
-      try {
-        setLoading(true);
-        const response = await fetch("/api/reviews/hostaway");
-        const data = await response.json();
-
-        if (data.success) {
-          const found = data.listings.find(
-            (l: ListingReviews) => l.listingId === listingId
-          );
-          setListing(found || null);
-        }
-      } catch (error) {
-        console.error("Failed to fetch property:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadProperty();
-  }, [listingId]);
-
-  const listingName = listing?.listingName ?? '';
-  const listingKey = listing?.listingId ?? '';
-
-  useEffect(() => {
-    if (!listingName) {
-      setGoogleReviews([]);
-      return;
-    }
-
-    const controller = new AbortController();
-    const loadGoogle = async () => {
-      try {
-        setGoogleLoading(true);
-        setGoogleError(null);
-        const response = await fetch(
-          `/api/reviews/google?listingName=${encodeURIComponent(listingName)}&listingId=${encodeURIComponent(listingKey)}`,
-          { signal: controller.signal }
-        );
-        if (!response.ok) {
-          throw new Error("Unable to fetch Google reviews");
-        }
-        const payload = await response.json();
-        if (!payload.success) {
-          throw new Error(payload.error || "Google reviews unavailable");
-        }
-        setGoogleReviews(payload.reviews ?? []);
-        setGooglePlaceName(payload.meta?.placeName ?? null);
-      } catch (error) {
-        if ((error as Error).name === "AbortError") return;
-        setGoogleError(
-          error instanceof Error ? error.message : "Failed to load Google reviews"
-        );
-      } finally {
-        setGoogleLoading(false);
-      }
-    };
-
-    loadGoogle();
-
-    return () => controller.abort();
-  }, [listingName, listingKey]);
-
-  if (loading) {
+  if (reviewsLoading) {
     return (
       <div className="min-h-screen bg-bg-primary text-fg">
         <NavHeader />

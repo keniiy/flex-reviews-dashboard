@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { fetchGoogleReviewsForListing } from "@/modules/reviews/google.service";
+import { fetchGoogleReviewsForListing } from "@/modules/reviews/services/google.service";
 import { normalizeHostawayReview } from "@/modules/reviews/hostaway.adapter";
 
 export async function GET(request: NextRequest) {
