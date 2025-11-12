@@ -1,52 +1,55 @@
 # Flex Living Reviews Dashboard
 
-A modern Next.js 16 application that helps Flex Living managers ingest Hostaway reviews, normalize them by property, and curate which testimonials are published on guest-facing pages.
+## About the app
 
-## Features
-- **Hostaway integration** with graceful fallback to realistic mock data (no empty dashboards when the sandbox has no reviews).
-- **Review normalization** groups data per listing, computes category averages, and surfaces insights such as trends, approval rate, and channel mix.
-- **Manager dashboard** offers KPI cards, advanced filters (rating, category, channel, timeframe, approval status), inline approvals, review-detail links, and quick access to each property page.
-- **Property catalogue (`/property`)** showcases the portfolio with marketing-friendly hero, featured listings, and static About/Contact anchors that match the provided Flex Living comps.
-- **Detailed property page** mirrors the Flex Living PDP layout with a hero gallery, booking widget, amenity chips, and an approved-review spotlight.
-- **Single review page (`/reviews/[id]`)** lets managers deep-dive an individual review, flip approval state, and preview the underlying property gallery without hunting through the dashboard.
-- **Theme-aware UI** powered by a lightweight context so the interface feels at home in both dark dashboard mode and light marketing pages.
+This is the admin center for Flex Living. The dashboard normalizes Hostaway reviews, lets managers approve/reject them in-context, and shows how those testimonials surface on the marketing-facing property pages. Every listing keeps its history and insights inside an accordion so we can scan KPIs quickly, then dive into the relevant reviews without leaving the page. When a Google Place match exists, the property detail page also shows the most recent public review so the ops and marketing teams see the same public story.
 
-## Getting Started
+### Tech stack (frontend & backend)
+
+| Layer | Tools |
+| --- | --- |
+| Frontend | Next.js 16 (App Router), React 19, Tailwind/TWCS, Radix/Lucide UI, TypeScript |
+| Backend | Next.js route handlers (`app/api/**`) calling Hostaway + Google services |
+| Data/logic | Services in `modules/reviews/services/*`, reusable hooks (`useReviewsData`, `useGoogleReviews`), persisted approvals (`data/approvals.json`), cached Google place IDs (`data/google-places.json`) |
+| Tooling | ESLint, Faker mock data, docs in `docs/deliverables.md` & `docs/summary.txt` |
+
+### Key design & logic decisions
+
+- **Shared services + hooks**: Hostaway ingestion, Google lookup, and analytics. Pages only import hook, keeping data fetching reusable and testable.
+
+- **Optimistic approvals**: Dashboard accordion cards show filtered reviews, and approving/unapproving updates KPIs immediately while the API request runs in the background.
+
+- **Accordion UX**: Each listing holds its own history in an expandable card. controls let ops scan dozens of properties quickly.
+making it in a simple list would make the UX overwhelming and noisy
+
+- **Cache + overrides**: Google place matches persist to a local json file.  and can be overridden via config`, so the Text Search guess can be corrected once and reused.
+
+- **Dark mode + skeletons**: Theming is just my personal flare, toggle keeps the admin vs marketing personas clear, and skeleton loaders provide a nice preloader while Hostaway/Google calls resolve.
+
+### Running version / local setup
+
 ```bash
-cp .env.example .env.local   # drop the provided Hostaway credentials if you have them
+cp .env.example .env.local
 npm install
 npm run dev
 ```
-Open [http://localhost:3000](http://localhost:3000). The root route now shows an admin-focused landing page with live KPIs and shortcuts into the dashboard.
 
-## Environment Variables
-| Key | Description |
+Visit [http://localhost:3000](http://localhost:3000). Approvals persist to `data/approvals.json`. Google overrides live in `config/google-places.overrides.json`. Currently not deployed—submit your own build (Vercel, Netlify, etc.) when ready.
+
+### API behaviors
+
+| Route | Description |
 | --- | --- |
-| `HOSTAWAY_ACCOUNT_ID` | Hostaway account ID (61148 for the sandbox). |
-| `HOSTAWAY_API_KEY` | API key/token used to mint short-lived access tokens. |
-| `HOSTAWAY_API_BASE_URL` | Optional override (defaults to `https://api.hostaway.com/v1`). |
-| `GOOGLE_PLACES_API_KEY` | Server-side key used for Google Places Text Search + Details requests. |
-| `GOOGLE_PLACE_ID` | Optional ID for the global Google review feed that powers the dashboard aggregates. |
+| `GET /api/reviews/hostaway` | Authenticates with Hostaway, normalizes + groups reviews, returns totals and channel/category insights. Falls back to `lib/mock-data.ts` and logs the reason when the sandbox is empty. |
+| `POST /api/reviews/approve` | Persists approve/unapprove state into `data/approvals.json` so public pages only show curated testimonials. |
+| `GET /api/reviews/google` | Resolves a listing name to a Place ID via Google Places Text Search, caches the mapping, and returns normalized Google review data when a match exists. |
 
-Without credentials the app automatically uses the bundled mock dataset so you can still explore every screen.
+### Google Reviews findings
 
-## API Routes
-- `GET /api/reviews/hostaway` – Fetches Hostaway reviews, normalizes + groups them, and returns aggregate metrics alongside per-listing insights (with Google Places data blended in when available).
-- `POST /api/reviews/approve` – Toggles whether a review should appear publicly. Uses an in-memory store that simulates what a database table would provide.
-- `GET /api/reviews/google?listingName=London+Loft` – On-demand Google Places lookup for a specific listing name; used by the property detail page to surface Google reviews only when there’s a confident match.
+- Created a GCP project, enabled Places API, and used the free credit to test Text Search + Details.
+- Because Hostaway doesn’t expose Place IDs, the app tries to match by listing name/location and caches the successful match. Manual overrides let you pin an exact Place ID if the automatic search is off.
+- Google reviews only show on the property detail page—ops can see the latest public review beneath the Hostaway-approved list, while the dashboard stays focused on internal data.
 
-The approval store now persists to `data/approvals.json` so your decisions survive API restarts, and the property page automatically searches Google Places for the listing name and shows any matched reviews beneath the Hostaway feed (otherwise it surfaces a “No Google reviews” state along with the matching attempt).
+### AI tool used
 
-## Useful Scripts
-| Command | Description |
-| --- | --- |
-| `npm run dev` | Start the Next.js dev server. |
-| `npm run build` | Create a production build. |
-| `npm run start` | Run the compiled production build. |
-| `npm run lint` | Run ESLint over the project. |
-
-## Routes Overview
-- `/dashboard` – operational workspace for approvals & insights.
-- `/property` – marketing-facing listing explorer with hero, featured cards, and CTA sections.
-- `/property/[listingId]` – property detail layout with gallery, amenities, booking widget, and curated reviews.
-- `/reviews/[reviewId]` – single-review deep dive with approve/unapprove controls and property context.
+- ChatGPT assisted for autocomplete and quick research support (e.g. clarifying API behavior, summarizing docs). All architecture, logic, and implementation were done manually.
